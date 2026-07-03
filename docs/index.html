@@ -16,10 +16,19 @@
   }
   *{box-sizing:border-box}
   html{scroll-behavior:smooth}
-  body{margin:0;background:radial-gradient(1200px 600px at 70% -10%,#132033 0,var(--bg) 55%);
-    color:var(--ink);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  body{margin:0;
+    background:
+      radial-gradient(900px 480px at 80% -8%,rgba(47,215,162,.10) 0,transparent 52%),
+      radial-gradient(1200px 600px at 68% -10%,#132033 0,var(--bg) 55%);
+    color:var(--ink);font-family:var(--sans);line-height:1.55;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden}
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.04;
+    mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+  header,.wrap{position:relative;z-index:1}
   a{color:var(--accent);text-decoration:none}
   a:hover{text-decoration:underline}
+  :focus-visible{outline:none;box-shadow:0 0 0 3px rgba(47,215,162,.4);border-radius:8px}
+  .mono,.stat .v{font-variant-numeric:tabular-nums}
   .wrap{max-width:960px;margin:0 auto;padding:0 24px}
   header{padding:22px 0;display:flex;align-items:center;justify-content:space-between;
     border-bottom:1px solid var(--line);position:sticky;top:0;
@@ -38,14 +47,38 @@
   .cta{margin-top:28px;display:flex;gap:12px;flex-wrap:wrap}
   .btn{padding:12px 20px;border-radius:10px;font-weight:600;font-size:14.5px;cursor:pointer;
     border:1px solid var(--line);background:var(--card);color:var(--ink);transition:.15s}
+  .btn{transition:transform .16s cubic-bezier(.23,1,.32,1),border-color .16s,background .16s,box-shadow .16s}
   .btn:hover{border-color:#33465e;transform:translateY(-1px)}
-  .btn.p{background:var(--grn);color:#04120d;border-color:var(--grn)}
-  .btn.p:hover{background:#43e2b1}
+  .btn:active{transform:translateY(0) scale(.97);transition-duration:80ms}
+  .btn.p{background:var(--grn);color:#04120d;border-color:var(--grn);box-shadow:0 0 26px rgba(47,215,162,.22)}
+  .btn.p:hover{background:#43e2b1;box-shadow:0 0 34px rgba(47,215,162,.32)}
   section{padding:34px 0;border-top:1px solid var(--line)}
   .eyebrow{font-size:12px;letter-spacing:1.6px;text-transform:uppercase;color:var(--dim);font-weight:700;margin-bottom:8px}
   h2{font-size:26px;letter-spacing:-.5px;margin:0 0 6px;font-weight:750}
   .lead{color:var(--mut);margin:0 0 22px;max-width:640px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px;
+    box-shadow:0 1px 2px rgba(0,0,0,.2)}
+  #board .card{box-shadow:0 18px 40px -12px rgba(0,0,0,.55),0 0 0 1px rgba(47,215,162,.06)}
+  .tanchor{margin-top:14px;font-size:12.5px;color:var(--dim);display:flex;gap:8px;align-items:center}
+  .tanchor b{color:var(--mut);font-weight:600}
+  /* live pulse dot */
+  .ld{width:8px;height:8px;border-radius:50%;background:var(--grn);display:inline-block;
+    box-shadow:0 0 0 0 rgba(47,215,162,.6);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(47,215,162,.5)}70%{box-shadow:0 0 0 7px rgba(47,215,162,0)}100%{box-shadow:0 0 0 0 rgba(47,215,162,0)}}
+  .dot.ok{box-shadow:0 0 30px rgba(47,215,162,.22)}
+  .dot.no{box-shadow:0 0 30px rgba(255,93,108,.18)}
+  /* hidden->proven privacy strip */
+  .priv{margin-top:16px;display:none;align-items:center;gap:14px;flex-wrap:wrap;
+    background:#0d1420;border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .priv.on{display:flex;animation:fade .4s cubic-bezier(.23,1,.32,1)}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .chips{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{font-family:var(--mono);font-size:12px;color:var(--dim);background:#0a1017;
+    border:1px solid var(--line);border-radius:7px;padding:5px 9px;letter-spacing:1px}
+  .arrow{color:var(--grn);font-size:16px}
+  .proven{font-family:var(--mono);font-size:17px;color:var(--grn);
+    background:var(--grn-dim);border:1px solid #1c5142;border-radius:8px;padding:6px 12px}
+  .proven small{color:var(--mut);font-size:11px;margin-right:6px;letter-spacing:.4px}
   /* live board */
   .board{display:grid;gap:18px}
   .badge{display:flex;align-items:center;gap:16px}
@@ -78,6 +111,8 @@
   .step .n{font-family:var(--mono);color:var(--grn);font-size:13px}
   .step h3{margin:8px 0 6px;font-size:16px}
   .step p{margin:0;color:var(--mut);font-size:14px}
+  @media(hover:hover){.step{transition:transform .18s cubic-bezier(.23,1,.32,1),border-color .18s}
+    .step:hover{transform:translateY(-2px);border-color:#2a3a4f}}
   .note{font-size:13px;color:var(--dim);background:#0d1420;border:1px dashed var(--line);
     border-radius:10px;padding:12px 14px;margin-top:16px}
   footer{padding:40px 0 60px;color:var(--dim);font-size:13px;border-top:1px solid var(--line)}
@@ -91,6 +126,7 @@
   .spin{display:inline-block;width:13px;height:13px;border:2px solid #223;border-top-color:var(--grn);
     border-radius:50%;animation:s .7s linear infinite;vertical-align:-2px;margin-right:6px}
   @keyframes s{to{transform:rotate(360deg)}}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
@@ -108,7 +144,7 @@
 
 <div class="wrap">
   <div class="hero">
-    <span class="tag">● Zero-knowledge proof-of-reserves · live on Stellar testnet</span>
+    <span class="tag"><span class="ld"></span> Zero-knowledge proof-of-reserves · live on Stellar testnet</span>
     <h1>Prove your reserves.<br><span class="u">Not your books.</span></h1>
     <p class="sub">A stablecoin or RWA issuer proves on-chain that its reserves cover every customer
       liability — without revealing a single account balance. The math is checked by a Stellar smart
@@ -144,6 +180,7 @@
         <a id="lkIssuer" target="_blank" rel="noopener">Issuer account ↗</a>
         <span class="pill" id="cid"></span>
       </div>
+      <div class="tanchor"><b>Verified by a BLS12-381 pairing check inside the contract</b> — cryptography, not a custodian's word.</div>
     </div>
   </section>
 
@@ -161,6 +198,11 @@
         <button class="btn p" id="genBtn">Generate ZK proof</button>
         <span class="muted mono" id="sumLbl">total: 0</span>
         <span class="pill">balances stay local</span>
+      </div>
+      <div class="priv" id="priv">
+        <div class="chips" id="chips"></div>
+        <span class="arrow">→</span>
+        <span class="proven"><small>PROVEN TOTAL</small><span id="provenVal">0</span></span>
       </div>
       <div class="log" id="log">Ready. Enter balances and generate a proof.</div>
     </div>
@@ -224,6 +266,7 @@ const log=(h,cls="")=>{logEl.innerHTML+=`\n<span class="${cls}">${h}</span>`;log
 document.getElementById("genBtn").addEventListener("click",async()=>{
   const btn=document.getElementById("genBtn"); btn.disabled=true;
   const bals=readBals(); const total=bals.reduce((a,b)=>a+b,0);
+  document.getElementById("priv").classList.remove("on");
   logEl.innerHTML=`<span class="a">▶ proving locally — your balances never leave this browser</span>`;
   try{
     const input={balances:bals.map(String),total:String(total)};
@@ -237,7 +280,11 @@ document.getElementById("genBtn").addEventListener("click",async()=>{
     const vkey=await (await fetch("circuit/verification_key.json")).json();
     const ok=await snarkjs.groth16.verify(vkey,publicSignals,proof);
     if(ok){
-      log(`✔ <b>proof VALID</b> — this proves total=${fmt(total)} without revealing any balance.`);
+      const chips=document.getElementById("chips"); chips.innerHTML="";
+      bals.forEach(()=>{const c=document.createElement("span");c.className="chip";c.textContent="••••";chips.appendChild(c);});
+      document.getElementById("provenVal").textContent=fmt(total);
+      document.getElementById("priv").classList.add("on");
+      log(`✔ <b>proof VALID</b> — total=${fmt(total)} is proven; the ${bals.length} balances stayed hidden (above).`);
       log(`This is the exact class of proof the Stellar contract accepts on-chain (see the live board).`);
     }else log(`✗ proof failed to verify`,"r");
   }catch(e){log(`error: ${e.message||e}`,"r");}
