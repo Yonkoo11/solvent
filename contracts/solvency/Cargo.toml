@@ -1,0 +1,30 @@
+[package]
+name = "solvency-verifier"
+version = "0.1.0"
+edition = "2021"
+publish = false
+rust-version = "1.89.0"
+
+[lib]
+crate-type = ["cdylib"]
+doctest = false
+
+[dependencies]
+soroban-sdk = { version = "25.1.0" }
+
+[dev-dependencies]
+soroban-sdk = { version = "25.1.0", features = ["testutils"] }
+ark-bls12-381 = { version = "0.4.0" }
+ark-serialize = { version = "0.4.2" }
+ark-ff = { version = "0.4.2" }
+serde_json = { version = "1" }
+
+[profile.release]
+opt-level = "z"
+overflow-checks = true
+debug = 0
+strip = "symbols"
+debug-assertions = false
+panic = "abort"
+codegen-units = 1
+lto = true

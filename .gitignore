@@ -48,3 +48,11 @@ deployments/local-*.json
 # Internal planning / working notes — never published. Public docs go in docs/.
 ai/
 .private/
+
+# project build artifacts
+node_modules/
+build/
+scripts/converter/target/
+*.zkey
+*.ptau
+*.wtns
