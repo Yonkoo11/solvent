@@ -6,8 +6,11 @@ Hackathon: Stellar Hacks: Real-World ZK. Fill the tabs in order: Profile, Detail
 ## TAB 1 — PROFILE
 ================================================================
 
-### Vision  (the problem this solves)
-Proof of reserves today is a spreadsheet you have to trust. After FTX, issuers said "we're fully backed," but users still had to take their word for it, and the honest way to prove it would expose every customer's balance. There's no way to show an issuer is solvent without either trusting them blindly or breaking everyone's privacy.
+### Vision  (the problem this solves)  [max 256 chars — this is 246]
+Proof of reserves today is a spreadsheet you must trust. Issuers say they are backed, but you take their word for it. Proving it honestly would expose every customer balance. Solvent proves solvency without trusting them or revealing any balance.
+
+### BUIDL logo
+Upload: ~/Projects/solvent/video/logo.png  (480x480)
 
 ### Category
 Crypto / Web3
