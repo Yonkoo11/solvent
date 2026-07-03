@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Solvent — ZK Proof-of-Reserves on Stellar</title>
+<meta name="description" content="Issuers prove their reserves cover customer liabilities on Stellar — without revealing a single balance. Zero-knowledge proof-of-reserves verified on-chain." />
+<style>
+  :root{
+    --bg:#0a0e14; --bg2:#0e141d; --card:#111926; --line:#1e2a3a;
+    --ink:#e8eef6; --mut:#8798ad; --dim:#5b6b80;
+    --grn:#2fd7a2; --grn-dim:#123a2e; --red:#ff5d6c; --red-dim:#3a1620;
+    --amber:#f5b544; --accent:#5b8cff;
+    --mono:"SFMono-Regular",ui-monospace,"JetBrains Mono",Menlo,monospace;
+    --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:radial-gradient(1200px 600px at 70% -10%,#132033 0,var(--bg) 55%);
+    color:var(--ink);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:960px;margin:0 auto;padding:0 24px}
+  header{padding:22px 0;display:flex;align-items:center;justify-content:space-between;
+    border-bottom:1px solid var(--line);position:sticky;top:0;
+    background:rgba(10,14,20,.82);backdrop-filter:blur(10px);z-index:10}
+  .brand{display:flex;align-items:center;gap:11px;font-weight:700;letter-spacing:.2px}
+  .logo{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,var(--grn),#1a8f6e);
+    display:grid;place-items:center;color:#04120d;font-weight:900;font-size:15px}
+  .nav a{color:var(--mut);font-size:14px;margin-left:20px}
+  .hero{padding:64px 0 40px}
+  .tag{display:inline-flex;gap:8px;align-items:center;font-size:12.5px;color:var(--grn);
+    background:var(--grn-dim);border:1px solid #1c5142;padding:5px 12px;border-radius:100px;
+    font-weight:600;letter-spacing:.3px}
+  h1{font-size:clamp(32px,5vw,52px);line-height:1.05;margin:20px 0 14px;letter-spacing:-1.2px;font-weight:800}
+  h1 .u{color:var(--grn)}
+  .sub{font-size:18px;color:var(--mut);max-width:620px}
+  .cta{margin-top:28px;display:flex;gap:12px;flex-wrap:wrap}
+  .btn{padding:12px 20px;border-radius:10px;font-weight:600;font-size:14.5px;cursor:pointer;
+    border:1px solid var(--line);background:var(--card);color:var(--ink);transition:.15s}
+  .btn:hover{border-color:#33465e;transform:translateY(-1px)}
+  .btn.p{background:var(--grn);color:#04120d;border-color:var(--grn)}
+  .btn.p:hover{background:#43e2b1}
+  section{padding:34px 0;border-top:1px solid var(--line)}
+  .eyebrow{font-size:12px;letter-spacing:1.6px;text-transform:uppercase;color:var(--dim);font-weight:700;margin-bottom:8px}
+  h2{font-size:26px;letter-spacing:-.5px;margin:0 0 6px;font-weight:750}
+  .lead{color:var(--mut);margin:0 0 22px;max-width:640px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px}
+  /* live board */
+  .board{display:grid;gap:18px}
+  .badge{display:flex;align-items:center;gap:16px}
+  .dot{width:56px;height:56px;border-radius:14px;display:grid;place-items:center;font-size:28px;flex:0 0 auto}
+  .dot.ok{background:var(--grn-dim);border:1px solid #1c5142}
+  .dot.no{background:var(--red-dim);border:1px solid #5a222c}
+  .dot.wait{background:#1a2432;border:1px solid var(--line)}
+  .status{font-size:24px;font-weight:800;letter-spacing:-.3px}
+  .status.ok{color:var(--grn)} .status.no{color:var(--red)} .status.wait{color:var(--mut)}
+  .status small{display:block;font-size:13px;font-weight:500;color:var(--mut);letter-spacing:0}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:4px}
+  .stat{background:var(--bg2);border:1px solid var(--line);border-radius:11px;padding:14px 16px}
+  .stat .k{font-size:11.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;font-weight:600}
+  .stat .v{font-family:var(--mono);font-size:19px;margin-top:3px;color:var(--ink)}
+  .muted{color:var(--mut)} .mono{font-family:var(--mono)}
+  .links{display:flex;gap:16px;flex-wrap:wrap;margin-top:4px;font-size:13.5px}
+  /* prover */
+  .bals{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  @media(max-width:560px){.bals{grid-template-columns:repeat(2,1fr)}}
+  .bals input{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:9px;
+    padding:11px 12px;color:var(--ink);font-family:var(--mono);font-size:15px}
+  .bals input:focus{outline:none;border-color:var(--grn)}
+  .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:16px}
+  .log{margin-top:18px;background:#080c12;border:1px solid var(--line);border-radius:11px;
+    padding:16px;font-family:var(--mono);font-size:13px;color:var(--mut);min-height:52px;white-space:pre-wrap;word-break:break-word}
+  .log b{color:var(--grn)} .log .r{color:var(--red)} .log .a{color:var(--amber)}
+  .pill{display:inline-block;font-size:11.5px;padding:3px 9px;border-radius:100px;border:1px solid var(--line);color:var(--mut)}
+  .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+  .step{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+  .step .n{font-family:var(--mono);color:var(--grn);font-size:13px}
+  .step h3{margin:8px 0 6px;font-size:16px}
+  .step p{margin:0;color:var(--mut);font-size:14px}
+  .note{font-size:13px;color:var(--dim);background:#0d1420;border:1px dashed var(--line);
+    border-radius:10px;padding:12px 14px;margin-top:16px}
+  footer{padding:40px 0 60px;color:var(--dim);font-size:13px;border-top:1px solid var(--line)}
+  @media(max-width:640px){
+    .nav{display:none}
+    h1{font-size:34px}
+    .tag{font-size:11px;padding:5px 11px;white-space:normal;line-height:1.45;max-width:100%}
+    header .wrap{padding:0 18px}
+    .badge{flex-wrap:wrap}
+  }
+  .spin{display:inline-block;width:13px;height:13px;border:2px solid #223;border-top-color:var(--grn);
+    border-radius:50%;animation:s .7s linear infinite;vertical-align:-2px;margin-right:6px}
+  @keyframes s{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;width:100%;padding:0 24px">
+    <div class="brand"><div class="logo">S</div> Solvent</div>
+    <nav class="nav">
+      <a href="#board">Live board</a>
+      <a href="#prove">Try the proof</a>
+      <a href="#how">How it works</a>
+      <a href="https://github.com/Yonkoo11/solvent" target="_blank" rel="noopener">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <span class="tag">● Zero-knowledge proof-of-reserves · live on Stellar testnet</span>
+    <h1>Prove your reserves.<br><span class="u">Not your books.</span></h1>
+    <p class="sub">A stablecoin or RWA issuer proves on-chain that its reserves cover every customer
+      liability — without revealing a single account balance. The math is checked by a Stellar smart
+      contract using a zero-knowledge proof. Lying about the total is cryptographically impossible.</p>
+    <div class="cta">
+      <a class="btn p" href="#prove">Generate a proof in your browser →</a>
+      <a class="btn" href="#board">See the live on-chain board</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <!-- LIVE BOARD -->
+  <section id="board">
+    <div class="eyebrow">Live · Stellar testnet</div>
+    <h2>On-chain solvency board</h2>
+    <p class="lead">This reads the latest attestation straight from the Solvent contract on Stellar
+      testnet. It is not a screenshot — it is the current on-chain state.</p>
+    <div class="card board">
+      <div class="badge">
+        <div class="dot wait" id="dot">…</div>
+        <div class="status wait" id="statusText">Reading chain…
+          <small id="statusSub">Fetching the latest attestation from Soroban RPC</small></div>
+      </div>
+      <div class="grid">
+        <div class="stat"><div class="k">Proven liabilities</div><div class="v" id="vTotal">—</div></div>
+        <div class="stat"><div class="k">Attested reserve</div><div class="v" id="vReserve">—</div></div>
+        <div class="stat"><div class="k">Coverage</div><div class="v" id="vCov">—</div></div>
+        <div class="stat"><div class="k">Attested at ledger</div><div class="v" id="vLedger">—</div></div>
+      </div>
+      <div class="links">
+        <a id="lkContract" target="_blank" rel="noopener">Contract on Stellar.Expert ↗</a>
+        <a id="lkIssuer" target="_blank" rel="noopener">Issuer account ↗</a>
+        <span class="pill" id="cid"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROVER -->
+  <section id="prove">
+    <div class="eyebrow">Interactive</div>
+    <h2>Generate a real proof — right here in your browser</h2>
+    <p class="lead">Enter eight customer balances. Your browser builds a Groth16 zero-knowledge proof
+      (BLS12-381) that they sum to a public total, with every balance range-checked so no negative
+      liability can be smuggled in. <b class="muted">The balances never leave this page</b> — only the
+      total and the proof would ever go on-chain.</p>
+    <div class="card">
+      <div class="bals" id="bals"></div>
+      <div class="row">
+        <button class="btn p" id="genBtn">Generate ZK proof</button>
+        <span class="muted mono" id="sumLbl">total: 0</span>
+        <span class="pill">balances stay local</span>
+      </div>
+      <div class="log" id="log">Ready. Enter balances and generate a proof.</div>
+    </div>
+    <div class="note">Honesty note: on the live board the <b>reserve</b> figure is a signed issuer
+      attestation (a mock custodian value in this demo). The zero-knowledge part — that the published
+      total truly equals the sum of the hidden balances, with no negative-balance cheat — is real and
+      verified on-chain.</div>
+  </section>
+
+  <!-- HOW -->
+  <section id="how">
+    <div class="eyebrow">Architecture</div>
+    <h2>How it works</h2>
+    <div class="steps">
+      <div class="step"><div class="n">01</div><h3>Prove privately</h3>
+        <p>A Circom circuit takes the issuer's private customer balances and proves their sum equals a
+          public total, range-checking each one to block the Mt.&nbsp;Gox negative-liability trick.</p></div>
+      <div class="step"><div class="n">02</div><h3>Verify on Stellar</h3>
+        <p>A Soroban contract checks the Groth16 proof with Stellar's native BLS12-381 host functions
+          (Protocol 25/26), then confirms the attested reserve covers the proven liabilities.</p></div>
+      <div class="step"><div class="n">03</div><h3>Trust the badge</h3>
+        <p>Anyone reads SOLVENT / INSOLVENT from the chain. A tampered total makes the pairing check
+          fail, so a lie can never be recorded as a valid attestation.</p></div>
+    </div>
+  </section>
+</div>
+
+<footer>
+  <div class="wrap">
+    Solvent · ZK proof-of-reserves for Stellar issuers · built for Stellar Hacks: Real-World ZK.
+    Circom + Groth16 (BLS12-381) verified in a Soroban smart contract. Testnet demo — not audited, not for real assets.
+  </div>
+</footer>
+
+<script src="vendor-snarkjs.min.js"></script>
+<script src="vendor-stellar-sdk.min.js"></script>
+<script>
+const CID = "CC33DWJZK2XQ7KWKBDJK2KBJSQNWUPG3DSGCHNMMOAIGC3VTAXZQLHDJ";
+const ISSUER = "GDFXZME4BSOZNOWNJF5WCM6OG2IPLFIGFJZJ5PX7HYRLY2JWQWW6ZAZS";
+const EXP = "https://stellar.expert/explorer/testnet";
+document.getElementById("cid").textContent = CID.slice(0,6)+"…"+CID.slice(-6);
+document.getElementById("lkContract").href = `${EXP}/contract/${CID}`;
+document.getElementById("lkIssuer").href = `${EXP}/account/${ISSUER}`;
+
+const fmt = n => Number(n).toLocaleString("en-US");
+
+/* ---------- interactive prover (snarkjs in-browser) ---------- */
+const seed = [1200,800,400,2500,100,900,1100,1000];
+const balsEl = document.getElementById("bals");
+const inputs = seed.map((v,i)=>{
+  const el=document.createElement("input");
+  el.type="number"; el.min="0"; el.value=v; el.setAttribute("aria-label",`balance ${i+1}`);
+  el.addEventListener("input",updateSum); balsEl.appendChild(el); return el;
+});
+function readBals(){return inputs.map(i=>Math.max(0,Math.floor(Number(i.value)||0)));}
+function updateSum(){document.getElementById("sumLbl").textContent="total: "+fmt(readBals().reduce((a,b)=>a+b,0));}
+updateSum();
+
+const logEl=document.getElementById("log");
+const log=(h,cls="")=>{logEl.innerHTML+=`\n<span class="${cls}">${h}</span>`;logEl.scrollTop=logEl.scrollHeight;};
+document.getElementById("genBtn").addEventListener("click",async()=>{
+  const btn=document.getElementById("genBtn"); btn.disabled=true;
+  const bals=readBals(); const total=bals.reduce((a,b)=>a+b,0);
+  logEl.innerHTML=`<span class="a">▶ proving locally — your balances never leave this browser</span>`;
+  try{
+    const input={balances:bals.map(String),total:String(total)};
+    log(`<span class="spin"></span>building witness + Groth16 proof (BLS12-381)…`);
+    const t0=performance.now();
+    const {proof,publicSignals}=await snarkjs.groth16.fullProve(
+      input,"circuit/solvency.wasm","circuit/solvency_final.zkey");
+    const ms=Math.round(performance.now()-t0);
+    log(`proof generated in ${ms} ms · public total = <b>${fmt(publicSignals[0])}</b>`);
+    log(`<span class="spin"></span>verifying proof locally…`);
+    const vkey=await (await fetch("circuit/verification_key.json")).json();
+    const ok=await snarkjs.groth16.verify(vkey,publicSignals,proof);
+    if(ok){
+      log(`✔ <b>proof VALID</b> — this proves total=${fmt(total)} without revealing any balance.`);
+      log(`This is the exact class of proof the Stellar contract accepts on-chain (see the live board).`);
+    }else log(`✗ proof failed to verify`,"r");
+  }catch(e){log(`error: ${e.message||e}`,"r");}
+  btn.disabled=false;
+});
+
+/* ---------- live on-chain board ---------- */
+async function loadBoard(){
+  const setWait=(t,s)=>{document.getElementById("statusSub").textContent=s||"";};
+  try{
+    const sdk=window.StellarSdk;
+    const rpc=new sdk.rpc.Server("https://soroban-testnet.stellar.org");
+    const acct=await rpc.getAccount(ISSUER);
+    const c=new sdk.Contract(CID);
+    const tx=new sdk.TransactionBuilder(acct,{fee:"100",networkPassphrase:sdk.Networks.TESTNET})
+      .addOperation(c.call("latest")).setTimeout(30).build();
+    const sim=await rpc.simulateTransaction(tx);
+    if(sdk.rpc.Api.isSimulationError(sim)) throw new Error(sim.error);
+    const val=sim.result?.retval ? sdk.scValToNative(sim.result.retval) : null;
+    render(val,sdk);
+  }catch(e){
+    document.getElementById("statusSub").textContent="Live read unavailable — open the contract on Stellar.Expert ↗";
+    console.warn("board read failed",e);
+  }
+}
+function render(a,sdk){
+  const dot=document.getElementById("dot"), st=document.getElementById("statusText");
+  if(!a){dot.className="dot wait";dot.textContent="—";st.className="status wait";
+    st.innerHTML='No attestation yet<small>Run the issuer tool to publish one</small>';return;}
+  const total=BigInt(a.total), reserve=BigInt(a.reserve), solvent=a.solvent;
+  const cov=total>0n?Number(reserve*10000n/total)/100:100;
+  document.getElementById("vTotal").textContent=fmt(total);
+  document.getElementById("vReserve").textContent=fmt(reserve);
+  document.getElementById("vCov").textContent=cov.toFixed(1)+"%";
+  document.getElementById("vLedger").textContent="#"+fmt(a.ledger);
+  if(solvent){dot.className="dot ok";dot.textContent="✓";st.className="status ok";
+    st.innerHTML='SOLVENT<small>Reserves cover proven liabilities · verified by ZK proof on-chain</small>';}
+  else{dot.className="dot no";dot.textContent="!";st.className="status no";
+    st.innerHTML='INSOLVENT<small>Proof valid, but attested reserve is below proven liabilities</small>';}
+}
+loadBoard();
+if(location.search.includes("autoprove")){window.addEventListener("load",()=>setTimeout(()=>document.getElementById("genBtn").click(),400));}
+</script>
+</body>
+</html>
