@@ -25,8 +25,49 @@ use soroban_sdk::{
 
 mod vk_data;
 mod vk_data_bn254;
+mod poseidon_params;
 #[cfg(test)]
 mod test;
+
+fn u256_be(env: &Env, bytes: &[u8; 32]) -> U256 {
+    U256::from_be_bytes(env, &Bytes::from_array(env, bytes))
+}
+
+/// Poseidon 2-to-1 hash over the BN254 scalar field, computed with Stellar's
+/// native `poseidon_permutation` host function (Protocol 25 / CAP-0075) using
+/// circomlib's standard constants. The constants are validated off-chain against
+/// the canonical poseidon([1,2]) vector, and the on-chain wiring is checked by
+/// the `poseidon_matches_reference` test before this is trusted.
+fn poseidon2(env: &Env, a: &U256, b: &U256) -> U256 {
+    let mut mds = Vec::new(env);
+    for i in 0..3 {
+        let mut row = Vec::new(env);
+        for j in 0..3 {
+            row.push_back(u256_be(env, &poseidon_params::MDS[i][j]));
+        }
+        mds.push_back(row);
+    }
+    let mut rc = Vec::new(env);
+    for r in 0..poseidon_params::N_ROUNDS {
+        let mut row = Vec::new(env);
+        for i in 0..3 {
+            row.push_back(u256_be(env, &poseidon_params::RC[r][i]));
+        }
+        rc.push_back(row);
+    }
+    let input = vec![env, U256::from_u32(env, 0), a.clone(), b.clone()];
+    let out = env.crypto_hazmat().poseidon_permutation(
+        &input,
+        symbol_short!("BN254"),
+        poseidon_params::T,
+        poseidon_params::D,
+        poseidon_params::RF,
+        poseidon_params::RP,
+        &mds,
+        &rc,
+    );
+    out.get(0).unwrap()
+}
 
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
@@ -185,5 +226,29 @@ impl SolvencyContract {
     /// Total number of attestations recorded across all issuers.
     pub fn count(env: Env) -> u32 {
         env.storage().instance().get(&DataKey::Count).unwrap_or(0)
+    }
+
+    /// Poseidon 2-to-1 hash (BN254 scalar field) via Stellar's native Poseidon
+    /// host function. Exposed so a customer can recompute a Merkle inclusion
+    /// path off-chain that matches the on-chain hashing.
+    pub fn hash2(env: Env, a: U256, b: U256) -> U256 {
+        poseidon2(&env, &a, &b)
+    }
+
+    /// Verify a Poseidon Merkle inclusion path on-chain: fold `leaf` up through
+    /// `path` (each step is a sibling and whether it sits on the left) using the
+    /// native Poseidon host function, and check the computed root equals `root`.
+    /// Lets a customer prove their balance leaf is inside an issuer's published
+    /// tree without revealing the other leaves.
+    pub fn verify_inclusion(env: Env, leaf: U256, path: Vec<(U256, bool)>, root: U256) -> bool {
+        let mut node = leaf;
+        for (sib, sib_left) in path.iter() {
+            node = if sib_left {
+                poseidon2(&env, &sib, &node)
+            } else {
+                poseidon2(&env, &node, &sib)
+            };
+        }
+        node == root
     }
 }

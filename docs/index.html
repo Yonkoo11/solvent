@@ -295,7 +295,7 @@
         <a id="lkIssuer" target="_blank" rel="noopener">Issuer account ↗</a>
         <span class="pill" id="cid"></span>
       </div>
-      <div class="tanchor"><b>Verified on-chain by native pairing checks over BLS12-381 (Protocol 25) and BN254 (Protocol 26).</b> <span id="curveNote"></span> Cryptography, not a custodian's word.</div>
+      <div class="tanchor"><b>Verified on-chain with three native Stellar primitives: BLS12-381 (P25) and BN254 (P26) pairing checks, plus Poseidon (CAP-0075) for customer inclusion proofs.</b> <span id="curveNote"></span> Cryptography, not a custodian's word.</div>
     </div>
   </section>
 
@@ -368,7 +368,7 @@
 <script src="vendor-snarkjs.min.js"></script>
 <script src="vendor-stellar-sdk.min.js"></script>
 <script>
-const CID = "CCRAJEUHMJUUVJX3SJZWUPGJKRF43ZXDETWFNCSAKND3FPAI33QXJZBE";
+const CID = "CAR32L3OU3W3CHQBWCN5IDTJZ5D4HL5EDIQEBLHTWOJE6OYVEBSALHBK";
 const ISSUER = "GDFXZME4BSOZNOWNJF5WCM6OG2IPLFIGFJZJ5PX7HYRLY2JWQWW6ZAZS";
 const EXP = "https://stellar.expert/explorer/testnet";
 document.getElementById("cid").textContent = CID.slice(0,6)+"…"+CID.slice(-6);

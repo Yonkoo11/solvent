@@ -9,7 +9,7 @@ pairing check fail, so it can never be recorded as a valid attestation.
 Built for **Stellar Hacks: Real-World ZK**.
 
 - **Live demo:** https://yonkoo11.github.io/solvent/
-- **Contract (testnet):** [`CCRAJEUHMJUUVJX3SJZWUPGJKRF43ZXDETWFNCSAKND3FPAI33QXJZBE`](https://stellar.expert/explorer/testnet/contract/CCRAJEUHMJUUVJX3SJZWUPGJKRF43ZXDETWFNCSAKND3FPAI33QXJZBE)
+- **Contract (testnet):** [`CAR32L3OU3W3CHQBWCN5IDTJZ5D4HL5EDIQEBLHTWOJE6OYVEBSALHBK`](https://stellar.expert/explorer/testnet/contract/CAR32L3OU3W3CHQBWCN5IDTJZ5D4HL5EDIQEBLHTWOJE6OYVEBSALHBK)
 
 ---
 
@@ -27,14 +27,21 @@ balances. A [Circom circuit](circuits/solvency.circom) proves two things at once
    shrink the reported total.
 
 The proof (Groth16) is verified inside the [Soroban contract](contracts/solvency/src/lib.rs) using
-**two** of Stellar's native ZK primitives, both proven live on testnet:
+**three** of Stellar's native ZK primitives, all proven live on testnet:
 
 - `attest` verifies over **BLS12-381** — `env.crypto().bls12_381().pairing_check(...)` (Protocol 25 / CAP-0059)
 - `attest_bn254` verifies over **BN254** — `env.crypto().bn254().pairing_check(...)` (Protocol 26 / CAP-0074)
+- `hash2` / `verify_inclusion` use the native **Poseidon** host function — `env.crypto_hazmat().poseidon_permutation(...)` (Protocol 25 / CAP-0075) — for a customer Merkle inclusion proof
 
 The contract then checks the issuer's attested reserve against the *proven* total and records
 **SOLVENT** or **INSOLVENT**. Attestations are stored **per issuer**, so one issuer can never
 overwrite or grief another's published verdict.
+
+The Poseidon wiring is not trusted blind: [`scripts/poseidon-gen.mjs`](scripts/poseidon-gen.mjs)
+validates circomlib's standard constants against the canonical `poseidon([1,2])` vector before
+emitting them, and the `poseidon_matches_reference` test confirms the **on-chain** host function
+reproduces that same value. `hash2(1,2)` on the live contract returns the canonical
+`0x115cc0f5…` result.
 
 Because the total `T` is a public input to the proof, changing it on the contract call changes the
 field element the pairing is computed against — so a tampered total is rejected by the cryptography,
@@ -42,13 +49,15 @@ not by a trusted server.
 
 ## Proven on-chain (Stellar testnet)
 
-All three branches were exercised live against the deployed contract:
+All exercised live against the deployed contract:
 
-| Case | Input | Result |
-|---|---|---|
-| Valid proof, reserve ≥ liabilities | total 1500, reserve 5000 | `true` → **SOLVENT** (recorded) |
-| Valid proof, reserve < liabilities | total 1500, reserve 1000 | `false` → **INSOLVENT** (recorded) |
-| **Tampered** total | proof for 1500, claim 1499 | `Error(Contract, #2)` **ProofRejected** (nothing recorded) |
+| Case | Result |
+|---|---|
+| Valid proof (BLS12-381), reserve ≥ liabilities | `true` → **SOLVENT** (recorded) |
+| Valid proof (BN254), reserve ≥ liabilities | `true` → **SOLVENT** (recorded) |
+| Valid proof, reserve < liabilities | `false` → **INSOLVENT** (recorded) |
+| **Tampered** total (either curve) | `Error(Contract, #2)` **ProofRejected** (nothing recorded) |
+| Poseidon `hash2(1,2)` on-chain | `0x115cc0f5…` — the canonical `poseidon([1,2])` vector |
 
 ## Repo layout
 
@@ -68,14 +77,15 @@ Prereqs: Rust + `wasm32v1-none`, [`circom`](https://docs.circom.io) 2.x, Node 18
 
 ```bash
 npm install
-./scripts/build-circuit.sh                 # circuit -> Groth16 proof (verifies off-chain)
-( cd scripts/converter && cargo run )      # snarkjs JSON -> embedded VK + invoke args
-cd contracts/solvency && cargo test        # runs the REAL proof through the contract (3/3)
-stellar contract build                     # -> target/wasm32v1-none/release/solvency_verifier.wasm
+./scripts/build-circuit.sh                              # BLS12-381 Groth16 proof (verifies off-chain)
+( cd scripts/converter && cargo run --bin convert )     # snarkjs JSON -> embedded BLS12-381 VK + args
+node scripts/poseidon-gen.mjs                           # validate + emit Poseidon constants
+cd contracts/solvency && cargo test                     # 5/5: BLS + BN254 + Poseidon + inclusion + per-issuer
+stellar contract build                                  # -> target/wasm32v1-none/release/solvency_verifier.wasm
 ```
 
-`cargo test` runs your real proof through the actual Soroban BLS12-381 host functions — it is
-genuine cryptographic verification, not a mock. To deploy + attest on testnet, see
+`cargo test` runs your real proof through the actual Soroban host functions (BLS12-381, BN254, and
+Poseidon) — genuine cryptographic verification, not a mock. To deploy + attest on testnet, see
 [`scripts/attest.sh`](scripts/attest.sh).
 
 ## Honest disclosures (work-in-progress, per hackathon guidance)
@@ -84,9 +94,13 @@ genuine cryptographic verification, not a mock. To deploy + attest on testnet, s
   passes in (a stand-in for a real custodian feed). The zero-knowledge part (that the published
   total equals the sum of the hidden balances, with no negative-balance cheat) is real and verified
   on-chain. Wiring a real custodian attestation is the obvious next step.
-- The circuit is fixed at **N = 8** balances for the demo; it is parameterizable. A production
-  version would use a Merkle-sum tree so each customer can verify their own inclusion, and would use
-  Stellar's native Poseidon host function for the tree hashing.
+- **Poseidon Merkle inclusion is wired and validated on-chain** (`verify_inclusion` folds a path with
+  the native Poseidon host function), but the Merkle root is **not yet bound to the ZK sum-proof**.
+  Binding them requires computing the Poseidon root inside the Circom circuit so the proven balances
+  and the inclusion tree are provably the same set. That is the next step; until then, inclusion
+  proves membership in the issuer's published tree, and the ZK proof separately proves the total is
+  honest.
+- The circuit is fixed at **N = 8** balances for the demo; it is parameterizable.
 - Testnet only. The contract has **not** been audited. Do not use with real assets.
 - The trusted setup here is a single-contributor toy ceremony. Production needs a real MPC ceremony.
 

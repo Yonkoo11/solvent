@@ -3,7 +3,7 @@ extern crate std;
 
 use ark_serialize::CanonicalSerialize;
 use core::str::FromStr;
-use soroban_sdk::{testutils::Address as _, Address, BytesN, Env};
+use soroban_sdk::{testutils::Address as _, Address, Bytes, BytesN, Env, U256};
 
 use crate::{SolvencyContract, SolvencyContractClient};
 
@@ -96,6 +96,36 @@ fn bn254_verifies_and_marks_solvent() {
     assert_eq!(c.latest(&issuer).unwrap().curve, soroban_sdk::symbol_short!("BN254"));
     // tampered total on BN254 path is rejected too
     assert!(c.try_attest_bn254(&issuer, &(total - 1), &(total + 500), &a, &b, &cc).is_err());
+}
+
+// ============ Poseidon host-function gate (must pass before use) ============
+#[test]
+fn poseidon_matches_reference() {
+    let env = Env::default();
+    let c = client(&env);
+    let got = c.hash2(&U256::from_u32(&env, 1), &U256::from_u32(&env, 2));
+    let expected = U256::from_be_bytes(&env, &Bytes::from_array(&env, &crate::poseidon_params::REF_1_2));
+    assert_eq!(got, expected, "on-chain Poseidon must match circomlib poseidon([1,2])");
+}
+
+// ============ Poseidon Merkle inclusion (uses the native host function) ============
+#[test]
+fn poseidon_merkle_inclusion() {
+    let env = Env::default();
+    let c = client(&env);
+    let u = |n: u32| U256::from_u32(&env, n);
+    // 4-leaf tree: leaves 10,20,30,40
+    let (l0, l1, l2, l3) = (u(10), u(20), u(30), u(40));
+    let h01 = c.hash2(&l0, &l1);
+    let h23 = c.hash2(&l2, &l3);
+    let root = c.hash2(&h01, &h23);
+    // inclusion path for l0: sibling l1 (right), then sibling h23 (right)
+    let mut path = soroban_sdk::Vec::new(&env);
+    path.push_back((l1.clone(), false));
+    path.push_back((h23.clone(), false));
+    assert_eq!(c.verify_inclusion(&l0, &path, &root), true, "valid path must verify");
+    // wrong leaf must fail
+    assert_eq!(c.verify_inclusion(&u(99), &path, &root), false, "bad leaf must not verify");
 }
 
 // ================= per-issuer isolation =================
