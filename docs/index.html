@@ -8,7 +8,7 @@
 <style>
   :root{
     --bg:#070b11; --bg2:#0c121b; --card:#0f1723; --card2:#121c2b; --line:#1d2a3b; --line2:#26374d;
-    --ink:#eef3fa; --mut:#8ea0b6; --dim:#5c6d83; --faint:#3d4c60;
+    --ink:#eef3fa; --mut:#9aabc0; --dim:#8b97a8; --faint:#66748a;
     --grn:#2fe0a6; --grn2:#12b988; --grn-dim:#0c2c22; --grn-line:#1c5a46;
     --red:#ff5d6c; --red-dim:#33121a; --amber:#f5b544; --accent:#6ba0ff;
     --mono:"SFMono-Regular",ui-monospace,"JetBrains Mono",Menlo,monospace;
@@ -83,7 +83,7 @@
     -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
   .plabel{font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--dim);font-weight:700;display:flex;justify-content:space-between;align-items:center}
   .hchips{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 4px}
-  .hchip{font-family:var(--mono);font-size:12px;color:var(--faint);background:#0a121b;border:1px solid var(--line);
+  .hchip{font-family:var(--mono);font-size:12px;color:var(--dim);background:#0a121b;border:1px solid var(--line);
     border-radius:7px;padding:6px 9px;letter-spacing:2px;animation:breathe 3s var(--ease) infinite}
   .hchip:nth-child(2n){animation-delay:.4s}.hchip:nth-child(3n){animation-delay:.8s}
   @keyframes breathe{0%,100%{opacity:.55}50%{opacity:.95}}
@@ -145,7 +145,7 @@
   .prover{background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line);border-radius:20px;padding:26px}
   .ledger{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
   .cell{position:relative}
-  .cell label{position:absolute;top:7px;left:11px;font-size:9.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--faint);font-weight:600;pointer-events:none}
+  .cell label{position:absolute;top:7px;left:11px;font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--dim);font-weight:600;pointer-events:none}
   .cell input{width:100%;background:#0a121b;border:1px solid var(--line);border-radius:10px;
     padding:22px 12px 9px;color:var(--ink);font-family:var(--mono);font-size:15px;transition:border-color .16s,box-shadow .16s}
   .cell input:focus{outline:none;border-color:var(--grn-line);box-shadow:0 0 0 3px rgba(47,224,166,.14)}
@@ -157,7 +157,7 @@
   .priv.on{display:flex;animation:fade .45s var(--ease)}
   @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
   .chips{display:flex;gap:6px;flex-wrap:wrap}
-  .chip{font-family:var(--mono);font-size:12px;color:var(--faint);background:#070d14;border:1px solid var(--line);
+  .chip{font-family:var(--mono);font-size:12px;color:var(--dim);background:#070d14;border:1px solid var(--line);
     border-radius:7px;padding:6px 9px;letter-spacing:2px}
   .arrow{color:var(--grn);font-size:18px}
   .proven{font-family:var(--mono);font-size:17px;color:var(--grn);background:var(--grn-dim);border:1px solid var(--grn-line);
@@ -205,7 +205,9 @@
     .stat .v{font-size:17px;letter-spacing:-.5px}
     .hero{padding-top:40px}
   }
-  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  .reveal{opacity:0;transform:translateY(18px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
+  .reveal.in{opacity:1;transform:none}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
 </style>
 </head>
 <body>
@@ -472,6 +474,16 @@ function render(a){
     :"Attested reserve is below the proven liabilities.";
 }
 loadBoard();
+
+/* scroll reveal (tasteful, with safety fallback + reduced-motion guard) */
+if(!matchMedia("(prefers-reduced-motion: reduce)").matches){
+  const els=[...document.querySelectorAll(".band, .panel")];
+  els.forEach(e=>e.classList.add("reveal"));
+  const io=new IntersectionObserver(ents=>ents.forEach(en=>{if(en.isIntersecting){en.target.classList.add("in");io.unobserve(en.target);}}),{threshold:.12});
+  els.forEach(e=>io.observe(e));
+  setTimeout(()=>els.forEach(e=>e.classList.add("in")),2500); // never leave content hidden
+}
+
 if(location.search.includes("autoprove")){window.addEventListener("load",()=>setTimeout(()=>document.getElementById("genBtn").click(),400));}
 </script>
 </body>
