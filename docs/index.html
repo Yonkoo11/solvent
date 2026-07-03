@@ -7,172 +7,285 @@
 <meta name="description" content="Issuers prove their reserves cover customer liabilities on Stellar — without revealing a single balance. Zero-knowledge proof-of-reserves verified on-chain." />
 <style>
   :root{
-    --bg:#0a0e14; --bg2:#0e141d; --card:#111926; --line:#1e2a3a;
-    --ink:#e8eef6; --mut:#8798ad; --dim:#5b6b80;
-    --grn:#2fd7a2; --grn-dim:#123a2e; --red:#ff5d6c; --red-dim:#3a1620;
-    --amber:#f5b544; --accent:#5b8cff;
+    --bg:#070b11; --bg2:#0c121b; --card:#0f1723; --card2:#121c2b; --line:#1d2a3b; --line2:#26374d;
+    --ink:#eef3fa; --mut:#8ea0b6; --dim:#5c6d83; --faint:#3d4c60;
+    --grn:#2fe0a6; --grn2:#12b988; --grn-dim:#0c2c22; --grn-line:#1c5a46;
+    --red:#ff5d6c; --red-dim:#33121a; --amber:#f5b544; --accent:#6ba0ff;
     --mono:"SFMono-Regular",ui-monospace,"JetBrains Mono",Menlo,monospace;
     --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    --ease:cubic-bezier(.23,1,.32,1);
   }
   *{box-sizing:border-box}
   html{scroll-behavior:smooth}
-  body{margin:0;
+  body{margin:0;color:var(--ink);font-family:var(--sans);line-height:1.55;overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+    background:var(--bg);}
+  /* atmosphere layers */
+  .atmo{position:fixed;inset:0;z-index:-2;pointer-events:none;
     background:
-      radial-gradient(900px 480px at 80% -8%,rgba(47,215,162,.10) 0,transparent 52%),
-      radial-gradient(1200px 600px at 68% -10%,#132033 0,var(--bg) 55%);
-    color:var(--ink);font-family:var(--sans);line-height:1.55;
-    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden}
-  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.04;
-    mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
-  header,.wrap{position:relative;z-index:1}
+      radial-gradient(760px 520px at 88% -6%, rgba(47,224,166,.14) 0, transparent 60%),
+      radial-gradient(680px 520px at 6% 8%, rgba(59,110,180,.10) 0, transparent 60%),
+      radial-gradient(1100px 700px at 60% -14%, #101d2e 0, var(--bg) 58%);}
+  .atmo::after{content:"";position:absolute;inset:0;opacity:.5;
+    background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+    background-size:64px 64px;
+    -webkit-mask-image:radial-gradient(900px 620px at 70% 4%,#000 0,transparent 72%);
+            mask-image:radial-gradient(900px 620px at 70% 4%,#000 0,transparent 72%);}
+  .noise{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.035;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
   a{color:var(--accent);text-decoration:none}
   a:hover{text-decoration:underline}
-  :focus-visible{outline:none;box-shadow:0 0 0 3px rgba(47,215,162,.4);border-radius:8px}
-  .mono,.stat .v{font-variant-numeric:tabular-nums}
-  .wrap{max-width:960px;margin:0 auto;padding:0 24px}
-  header{padding:22px 0;display:flex;align-items:center;justify-content:space-between;
-    border-bottom:1px solid var(--line);position:sticky;top:0;
-    background:rgba(10,14,20,.82);backdrop-filter:blur(10px);z-index:10}
-  .brand{display:flex;align-items:center;gap:11px;font-weight:700;letter-spacing:.2px}
-  .logo{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,var(--grn),#1a8f6e);
-    display:grid;place-items:center;color:#04120d;font-weight:900;font-size:15px}
-  .nav a{color:var(--mut);font-size:14px;margin-left:20px}
-  .hero{padding:64px 0 40px}
-  .tag{display:inline-flex;gap:8px;align-items:center;font-size:12.5px;color:var(--grn);
-    background:var(--grn-dim);border:1px solid #1c5142;padding:5px 12px;border-radius:100px;
-    font-weight:600;letter-spacing:.3px}
-  h1{font-size:clamp(32px,5vw,52px);line-height:1.05;margin:20px 0 14px;letter-spacing:-1.2px;font-weight:800}
-  h1 .u{color:var(--grn)}
-  .sub{font-size:18px;color:var(--mut);max-width:620px}
+  :focus-visible{outline:none;box-shadow:0 0 0 3px rgba(47,224,166,.42);border-radius:8px}
+  .mono,.tnum{font-variant-numeric:tabular-nums;font-family:var(--mono)}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+
+  /* header */
+  header{position:sticky;top:0;z-index:20;border-bottom:1px solid transparent;transition:border-color .3s,background .3s}
+  header .bar{max-width:1080px;margin:0 auto;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;
+    background:rgba(7,11,17,.72);backdrop-filter:blur(12px);}
+  .brand{display:flex;align-items:center;gap:11px;font-weight:750;letter-spacing:-.2px;font-size:16px}
+  .logo{width:28px;height:28px;border-radius:8px;background:linear-gradient(140deg,var(--grn),var(--grn2));
+    display:grid;place-items:center;color:#04140e;font-weight:900;font-size:16px;
+    box-shadow:0 0 20px rgba(47,224,166,.35)}
+  .nav a{color:var(--mut);font-size:14px;margin-left:22px;font-weight:500}
+  .nav a:hover{color:var(--ink);text-decoration:none}
+
+  /* hero */
+  .hero{display:grid;grid-template-columns:1.05fr .95fr;gap:44px;align-items:center;padding:72px 0 30px}
+  .tag{display:inline-flex;gap:9px;align-items:center;font-size:12.5px;color:var(--grn);
+    background:var(--grn-dim);border:1px solid var(--grn-line);padding:6px 13px;border-radius:100px;
+    font-weight:600;letter-spacing:.2px}
+  .ld{width:8px;height:8px;border-radius:50%;background:var(--grn);display:inline-block;
+    box-shadow:0 0 0 0 rgba(47,224,166,.6);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(47,224,166,.5)}70%{box-shadow:0 0 0 8px rgba(47,224,166,0)}100%{box-shadow:0 0 0 0 rgba(47,224,166,0)}}
+  h1{font-size:clamp(38px,4.6vw,60px);line-height:1.02;margin:20px 0 16px;letter-spacing:-1.6px;font-weight:800}
+  h1 .u{background:linear-gradient(120deg,var(--grn),#7af5cf);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .sub{font-size:17.5px;color:var(--mut);max-width:520px}
   .cta{margin-top:28px;display:flex;gap:12px;flex-wrap:wrap}
-  .btn{padding:12px 20px;border-radius:10px;font-weight:600;font-size:14.5px;cursor:pointer;
-    border:1px solid var(--line);background:var(--card);color:var(--ink);transition:.15s}
-  .btn{transition:transform .16s cubic-bezier(.23,1,.32,1),border-color .16s,background .16s,box-shadow .16s}
+  .btn{padding:13px 22px;border-radius:11px;font-weight:650;font-size:14.5px;cursor:pointer;
+    border:1px solid var(--line2);background:var(--card);color:var(--ink);
+    transition:transform .16s var(--ease),border-color .16s,background .16s,box-shadow .16s}
   .btn:hover{border-color:#33465e;transform:translateY(-1px)}
   .btn:active{transform:translateY(0) scale(.97);transition-duration:80ms}
-  .btn.p{background:var(--grn);color:#04120d;border-color:var(--grn);box-shadow:0 0 26px rgba(47,215,162,.22)}
-  .btn.p:hover{background:#43e2b1;box-shadow:0 0 34px rgba(47,215,162,.32)}
-  section{padding:34px 0;border-top:1px solid var(--line)}
-  .eyebrow{font-size:12px;letter-spacing:1.6px;text-transform:uppercase;color:var(--dim);font-weight:700;margin-bottom:8px}
-  h2{font-size:26px;letter-spacing:-.5px;margin:0 0 6px;font-weight:750}
-  .lead{color:var(--mut);margin:0 0 22px;max-width:640px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px;
-    box-shadow:0 1px 2px rgba(0,0,0,.2)}
-  #board .card{box-shadow:0 18px 40px -12px rgba(0,0,0,.55),0 0 0 1px rgba(47,215,162,.06)}
-  .tanchor{margin-top:14px;font-size:12.5px;color:var(--dim);display:flex;gap:8px;align-items:center}
-  .tanchor b{color:var(--mut);font-weight:600}
-  /* live pulse dot */
-  .ld{width:8px;height:8px;border-radius:50%;background:var(--grn);display:inline-block;
-    box-shadow:0 0 0 0 rgba(47,215,162,.6);animation:pulse 2.2s infinite}
-  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(47,215,162,.5)}70%{box-shadow:0 0 0 7px rgba(47,215,162,0)}100%{box-shadow:0 0 0 0 rgba(47,215,162,0)}}
-  .dot.ok{box-shadow:0 0 30px rgba(47,215,162,.22)}
-  .dot.no{box-shadow:0 0 30px rgba(255,93,108,.18)}
-  /* hidden->proven privacy strip */
-  .priv{margin-top:16px;display:none;align-items:center;gap:14px;flex-wrap:wrap;
-    background:#0d1420;border:1px solid var(--line);border-radius:12px;padding:14px 16px}
-  .priv.on{display:flex;animation:fade .4s cubic-bezier(.23,1,.32,1)}
-  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-  .chips{display:flex;gap:6px;flex-wrap:wrap}
-  .chip{font-family:var(--mono);font-size:12px;color:var(--dim);background:#0a1017;
-    border:1px solid var(--line);border-radius:7px;padding:5px 9px;letter-spacing:1px}
-  .arrow{color:var(--grn);font-size:16px}
-  .proven{font-family:var(--mono);font-size:17px;color:var(--grn);
-    background:var(--grn-dim);border:1px solid #1c5142;border-radius:8px;padding:6px 12px}
-  .proven small{color:var(--mut);font-size:11px;margin-right:6px;letter-spacing:.4px}
-  /* live board */
-  .board{display:grid;gap:18px}
-  .badge{display:flex;align-items:center;gap:16px}
-  .dot{width:56px;height:56px;border-radius:14px;display:grid;place-items:center;font-size:28px;flex:0 0 auto}
-  .dot.ok{background:var(--grn-dim);border:1px solid #1c5142}
-  .dot.no{background:var(--red-dim);border:1px solid #5a222c}
-  .dot.wait{background:#1a2432;border:1px solid var(--line)}
-  .status{font-size:24px;font-weight:800;letter-spacing:-.3px}
+  .btn.p{background:linear-gradient(135deg,var(--grn),var(--grn2));color:#04140e;border-color:transparent;
+    box-shadow:0 8px 24px -6px rgba(47,224,166,.5),0 0 30px rgba(47,224,166,.22)}
+  .btn.p:hover{box-shadow:0 10px 30px -6px rgba(47,224,166,.62),0 0 40px rgba(47,224,166,.3)}
+  .herofoot{margin-top:26px;display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--dim)}
+  .herofoot .ok{color:var(--grn)}
+
+  /* hero proof panel */
+  .panel{position:relative;background:linear-gradient(180deg,rgba(20,32,48,.9),rgba(12,19,29,.92));
+    border:1px solid var(--line2);border-radius:20px;padding:26px 24px;
+    box-shadow:0 30px 70px -20px rgba(0,0,0,.7),0 0 0 1px rgba(47,224,166,.05),inset 0 1px 0 rgba(255,255,255,.04);
+    backdrop-filter:blur(8px)}
+  .panel::before{content:"";position:absolute;inset:-1px;border-radius:20px;padding:1px;pointer-events:none;
+    background:linear-gradient(180deg,rgba(47,224,166,.35),transparent 40%);
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+  .plabel{font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--dim);font-weight:700;display:flex;justify-content:space-between;align-items:center}
+  .hchips{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 4px}
+  .hchip{font-family:var(--mono);font-size:12px;color:var(--faint);background:#0a121b;border:1px solid var(--line);
+    border-radius:7px;padding:6px 9px;letter-spacing:2px;animation:breathe 3s var(--ease) infinite}
+  .hchip:nth-child(2n){animation-delay:.4s}.hchip:nth-child(3n){animation-delay:.8s}
+  @keyframes breathe{0%,100%{opacity:.55}50%{opacity:.95}}
+  .flow{display:flex;align-items:center;gap:10px;margin:16px 0 6px;color:var(--dim);font-size:12px}
+  .flow .ln{height:1px;flex:1;background:linear-gradient(90deg,transparent,var(--grn-line),transparent)}
+  .flow .zk{color:var(--grn);font-weight:700;font-size:11px;letter-spacing:1px;border:1px solid var(--grn-line);
+    background:var(--grn-dim);border-radius:100px;padding:3px 10px}
+  .ring-wrap{display:flex;align-items:center;gap:20px;margin-top:14px}
+  .ring{position:relative;width:132px;height:132px;flex:0 0 auto}
+  .ring svg{transform:rotate(-90deg)}
+  .ring .track{stroke:#182636;stroke-width:11;fill:none}
+  .ring .val{stroke:url(#g);stroke-width:11;fill:none;stroke-linecap:round;
+    stroke-dasharray:339.29;stroke-dashoffset:339.29;transition:stroke-dashoffset 1.1s var(--ease)}
+  .ring.no .val{stroke:var(--red)}
+  .ring .ctr{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+  .ring .ctr .pct{font-family:var(--mono);font-size:23px;font-weight:600;letter-spacing:-.5px}
+  .ring .ctr .cl{font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:var(--dim);margin-top:2px}
+  .ring-side .badge2{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:17px;letter-spacing:-.2px}
+  .badge2 .d{width:10px;height:10px;border-radius:50%;background:var(--grn);box-shadow:0 0 12px var(--grn)}
+  .badge2.no .d{background:var(--red);box-shadow:0 0 12px var(--red)}
+  .badge2.ok{color:var(--grn)} .badge2.no{color:var(--red)} .badge2.wait{color:var(--mut)}
+  .badge2.wait .d{background:var(--dim);box-shadow:none;animation:breathe 1.4s infinite}
+  .ring-side p{margin:8px 0 0;font-size:12.5px;color:var(--mut);max-width:150px}
+  .rmini{display:flex;gap:16px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+  .rmini div{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.6px}
+  .rmini b{display:block;font-family:var(--mono);font-size:15px;color:var(--ink);margin-top:3px;text-transform:none;letter-spacing:0;font-weight:500}
+
+  /* sections */
+  section.band{padding:56px 0;border-top:1px solid var(--line);position:relative}
+  .eyebrow{font-size:11.5px;letter-spacing:1.8px;text-transform:uppercase;color:var(--grn);font-weight:700;margin-bottom:10px;
+    display:inline-flex;align-items:center;gap:8px}
+  .eyebrow::before{content:"";width:16px;height:1px;background:var(--grn-line)}
+  h2{font-size:30px;letter-spacing:-.8px;margin:0 0 8px;font-weight:780}
+  .lead{color:var(--mut);margin:0 0 26px;max-width:600px;font-size:16px}
+
+  /* board */
+  .board-card{background:linear-gradient(180deg,var(--card2),var(--card));border:1px solid var(--line2);border-radius:20px;padding:28px;
+    box-shadow:0 24px 60px -22px rgba(0,0,0,.65),0 0 0 1px rgba(47,224,166,.05)}
+  .board-head{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  .dot{width:60px;height:60px;border-radius:16px;display:grid;place-items:center;font-size:30px;flex:0 0 auto;transition:.3s}
+  .dot.ok{background:var(--grn-dim);border:1px solid var(--grn-line);color:var(--grn);box-shadow:0 0 34px rgba(47,224,166,.28)}
+  .dot.no{background:var(--red-dim);border:1px solid #5a222c;color:var(--red);box-shadow:0 0 34px rgba(255,93,108,.2)}
+  .dot.wait{background:#141f2d;border:1px solid var(--line);color:var(--mut)}
+  .status{font-size:26px;font-weight:820;letter-spacing:-.4px}
   .status.ok{color:var(--grn)} .status.no{color:var(--red)} .status.wait{color:var(--mut)}
-  .status small{display:block;font-size:13px;font-weight:500;color:var(--mut);letter-spacing:0}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:4px}
-  .stat{background:var(--bg2);border:1px solid var(--line);border-radius:11px;padding:14px 16px}
-  .stat .k{font-size:11.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;font-weight:600}
-  .stat .v{font-family:var(--mono);font-size:19px;margin-top:3px;color:var(--ink)}
-  .muted{color:var(--mut)} .mono{font-family:var(--mono)}
-  .links{display:flex;gap:16px;flex-wrap:wrap;margin-top:4px;font-size:13.5px}
+  .status small{display:block;font-size:13px;font-weight:500;color:var(--mut);letter-spacing:0;margin-top:2px}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:22px}
+  .stat{background:#0a1017;border:1px solid var(--line);border-radius:13px;padding:15px 16px;position:relative;overflow:hidden}
+  .stat.hl{border-color:var(--grn-line);background:linear-gradient(180deg,rgba(47,224,166,.06),#0a1017)}
+  .stat .k{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;font-weight:650}
+  .stat .v{font-family:var(--mono);font-size:21px;margin-top:5px;color:var(--ink);font-variant-numeric:tabular-nums}
+  .stat.hl .v{color:var(--grn)}
+  .links{display:flex;gap:18px;flex-wrap:wrap;margin-top:20px;font-size:13.5px;align-items:center}
+  .pill{display:inline-block;font-size:11.5px;padding:4px 10px;border-radius:100px;border:1px solid var(--line);color:var(--dim);font-family:var(--mono)}
+  .tanchor{margin-top:16px;padding-top:16px;border-top:1px solid var(--line);font-size:12.5px;color:var(--dim)}
+  .tanchor b{color:var(--mut);font-weight:600}
+
   /* prover */
-  .bals{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-  @media(max-width:560px){.bals{grid-template-columns:repeat(2,1fr)}}
-  .bals input{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:9px;
-    padding:11px 12px;color:var(--ink);font-family:var(--mono);font-size:15px}
-  .bals input:focus{outline:none;border-color:var(--grn)}
-  .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:16px}
-  .log{margin-top:18px;background:#080c12;border:1px solid var(--line);border-radius:11px;
-    padding:16px;font-family:var(--mono);font-size:13px;color:var(--mut);min-height:52px;white-space:pre-wrap;word-break:break-word}
+  .prover{background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line);border-radius:20px;padding:26px}
+  .ledger{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .cell{position:relative}
+  .cell label{position:absolute;top:7px;left:11px;font-size:9.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--faint);font-weight:600;pointer-events:none}
+  .cell input{width:100%;background:#0a121b;border:1px solid var(--line);border-radius:10px;
+    padding:22px 12px 9px;color:var(--ink);font-family:var(--mono);font-size:15px;transition:border-color .16s,box-shadow .16s}
+  .cell input:focus{outline:none;border-color:var(--grn-line);box-shadow:0 0 0 3px rgba(47,224,166,.14)}
+  .row{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:16px}
+  .sumlbl{color:var(--mut);font-family:var(--mono);font-size:14px}
+  .sumlbl b{color:var(--ink)}
+  .priv{margin-top:16px;display:none;align-items:center;gap:14px;flex-wrap:wrap;
+    background:#0a121b;border:1px solid var(--line);border-radius:13px;padding:15px 16px}
+  .priv.on{display:flex;animation:fade .45s var(--ease)}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .chips{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{font-family:var(--mono);font-size:12px;color:var(--faint);background:#070d14;border:1px solid var(--line);
+    border-radius:7px;padding:6px 9px;letter-spacing:2px}
+  .arrow{color:var(--grn);font-size:18px}
+  .proven{font-family:var(--mono);font-size:17px;color:var(--grn);background:var(--grn-dim);border:1px solid var(--grn-line);
+    border-radius:9px;padding:7px 13px;box-shadow:0 0 22px rgba(47,224,166,.14)}
+  .proven small{color:var(--mut);font-size:11px;margin-right:7px;letter-spacing:.4px}
+  .log{margin-top:16px;background:#060b11;border:1px solid var(--line);border-radius:13px;
+    padding:16px;font-family:var(--mono);font-size:12.5px;color:var(--mut);min-height:52px;white-space:pre-wrap;word-break:break-word;line-height:1.7}
   .log b{color:var(--grn)} .log .r{color:var(--red)} .log .a{color:var(--amber)}
-  .pill{display:inline-block;font-size:11.5px;padding:3px 9px;border-radius:100px;border:1px solid var(--line);color:var(--mut)}
-  .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
-  .step{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
-  .step .n{font-family:var(--mono);color:var(--grn);font-size:13px}
-  .step h3{margin:8px 0 6px;font-size:16px}
-  .step p{margin:0;color:var(--mut);font-size:14px}
-  @media(hover:hover){.step{transition:transform .18s cubic-bezier(.23,1,.32,1),border-color .18s}
-    .step:hover{transform:translateY(-2px);border-color:#2a3a4f}}
-  .note{font-size:13px;color:var(--dim);background:#0d1420;border:1px dashed var(--line);
-    border-radius:10px;padding:12px 14px;margin-top:16px}
-  footer{padding:40px 0 60px;color:var(--dim);font-size:13px;border-top:1px solid var(--line)}
-  @media(max-width:640px){
-    .nav{display:none}
-    h1{font-size:34px}
-    .tag{font-size:11px;padding:5px 11px;white-space:normal;line-height:1.45;max-width:100%}
-    header .wrap{padding:0 18px}
-    .badge{flex-wrap:wrap}
-  }
-  .spin{display:inline-block;width:13px;height:13px;border:2px solid #223;border-top-color:var(--grn);
-    border-radius:50%;animation:s .7s linear infinite;vertical-align:-2px;margin-right:6px}
+  .spin{display:inline-block;width:12px;height:12px;border:2px solid #223;border-top-color:var(--grn);border-radius:50%;animation:s .7s linear infinite;vertical-align:-2px;margin-right:6px}
   @keyframes s{to{transform:rotate(360deg)}}
+  .note{font-size:13px;color:var(--dim);background:#0b1220;border:1px dashed var(--line2);border-radius:12px;padding:13px 15px;margin-top:16px}
+  .note b{color:var(--mut)}
+
+  /* flow (how it works) */
+  .flowsteps{display:grid;grid-template-columns:repeat(3,1fr);gap:0;position:relative;margin-top:8px}
+  .fstep{padding:26px 22px;position:relative}
+  .fstep:not(:last-child){border-right:1px solid var(--line)}
+  .fnode{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-family:var(--mono);font-weight:700;
+    background:#0c141e;border:1px solid var(--line2);color:var(--mut);margin-bottom:16px}
+  .fstep.mid .fnode{background:var(--grn-dim);border-color:var(--grn-line);color:var(--grn);box-shadow:0 0 26px rgba(47,224,166,.25)}
+  .fstep h3{margin:0 0 8px;font-size:16.5px;letter-spacing:-.2px}
+  .fstep p{margin:0;color:var(--mut);font-size:13.5px;line-height:1.6}
+  .fstep .chip2{display:inline-block;margin-bottom:12px;font-size:10.5px;letter-spacing:.6px;text-transform:uppercase;
+    color:var(--dim);font-weight:650}
+  .flowline{position:absolute;top:48px;left:8%;right:8%;height:1px;
+    background:linear-gradient(90deg,transparent,var(--grn-line),var(--grn-line),transparent);z-index:0}
+
+  footer{padding:40px 0 64px;color:var(--dim);font-size:12.5px;border-top:1px solid var(--line);line-height:1.7}
+
+  @media(hover:hover){.step:hover,.fstep:hover{transform:none}}
+  @media(max-width:860px){
+    .hero{grid-template-columns:1fr;gap:34px;padding:52px 0 20px}
+    .panel{order:2}
+    .grid{grid-template-columns:repeat(2,1fr)}
+    .ledger{grid-template-columns:repeat(2,1fr)}
+    .flowsteps{grid-template-columns:1fr}
+    .fstep:not(:last-child){border-right:none;border-bottom:1px solid var(--line)}
+    .flowline{display:none}
+  }
+  @media(max-width:600px){
+    .nav{display:none}
+    .tag{font-size:11px;white-space:normal;line-height:1.45}
+    h1{font-size:36px}
+    .grid,.ledger{grid-template-columns:1fr 1fr}
+    .stat .v{font-size:17px;letter-spacing:-.5px}
+    .hero{padding-top:40px}
+  }
   @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
+<div class="atmo"></div><div class="noise"></div>
+
 <header>
-  <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;width:100%;padding:0 24px">
+  <div class="bar">
     <div class="brand"><div class="logo">S</div> Solvent</div>
     <nav class="nav">
       <a href="#board">Live board</a>
       <a href="#prove">Try the proof</a>
       <a href="#how">How it works</a>
-      <a href="https://github.com/Yonkoo11/solvent" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/Yonkoo11/solvent" target="_blank" rel="noopener">GitHub ↗</a>
     </nav>
   </div>
 </header>
 
 <div class="wrap">
   <div class="hero">
-    <span class="tag"><span class="ld"></span> Zero-knowledge proof-of-reserves · live on Stellar testnet</span>
-    <h1>Prove your reserves.<br><span class="u">Not your books.</span></h1>
-    <p class="sub">A stablecoin or RWA issuer proves on-chain that its reserves cover every customer
-      liability — without revealing a single account balance. The math is checked by a Stellar smart
-      contract using a zero-knowledge proof. Lying about the total is cryptographically impossible.</p>
-    <div class="cta">
-      <a class="btn p" href="#prove">Generate a proof in your browser →</a>
-      <a class="btn" href="#board">See the live on-chain board</a>
+    <div class="hero-left">
+      <span class="tag"><span class="ld"></span> Zero-knowledge proof-of-reserves · live on Stellar</span>
+      <h1>Prove your reserves.<br><span class="u">Not your books.</span></h1>
+      <p class="sub">A stablecoin or RWA issuer proves on-chain that reserves cover every customer
+        liability — without revealing a single account balance. A Stellar contract checks the
+        zero-knowledge proof. Lying about the total is cryptographically impossible.</p>
+      <div class="cta">
+        <a class="btn p" href="#prove">Generate a proof in your browser →</a>
+        <a class="btn" href="#board">See the live on-chain board</a>
+      </div>
+      <div class="herofoot"><span class="ld"></span> <span>Verified on Stellar testnet — <span class="ok">real proofs, real contract</span></span></div>
+    </div>
+
+    <!-- LIVE PROOF PANEL -->
+    <div class="panel">
+      <div class="plabel"><span>Customer balances · hidden</span><span id="pIssuers">8 accounts</span></div>
+      <div class="hchips">
+        <span class="hchip">••••</span><span class="hchip">••••</span><span class="hchip">••••</span><span class="hchip">••••</span>
+        <span class="hchip">••••</span><span class="hchip">••••</span><span class="hchip">••••</span><span class="hchip">••••</span>
+      </div>
+      <div class="flow"><div class="ln"></div><span class="zk">ZK PROOF</span><div class="ln"></div></div>
+      <div class="ring-wrap">
+        <div class="ring" id="heroRing">
+          <svg width="132" height="132" viewBox="0 0 132 132">
+            <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#2fe0a6"/><stop offset="1" stop-color="#7af5cf"/></linearGradient></defs>
+            <circle class="track" cx="66" cy="66" r="54"/>
+            <circle class="val" id="heroArc" cx="66" cy="66" r="54"/>
+          </svg>
+          <div class="ctr"><div class="pct" id="heroCov">—</div><div class="cl">coverage</div></div>
+        </div>
+        <div class="ring-side">
+          <span class="badge2 wait" id="heroBadge"><span class="d"></span><span id="heroStatus">Reading chain…</span></span>
+          <p id="heroCaption">Fetching the latest attestation from Stellar testnet.</p>
+          <div class="rmini">
+            <div>Liabilities<b class="tnum" id="heroTotal">—</b></div>
+            <div>Reserve<b class="tnum" id="heroReserve">—</b></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
 <div class="wrap">
-  <!-- LIVE BOARD -->
-  <section id="board">
+  <!-- BOARD -->
+  <section id="board" class="band">
     <div class="eyebrow">Live · Stellar testnet</div>
-    <h2>On-chain solvency board</h2>
-    <p class="lead">This reads the latest attestation straight from the Solvent contract on Stellar
-      testnet. It is not a screenshot — it is the current on-chain state.</p>
-    <div class="card board">
-      <div class="badge">
+    <h2>The proof, on-chain</h2>
+    <p class="lead">Read straight from the Solvent contract on Stellar testnet — the current attestation,
+      not a screenshot. The verdict is produced by a cryptographic pairing check, not a trusted server.</p>
+    <div class="board-card">
+      <div class="board-head">
         <div class="dot wait" id="dot">…</div>
         <div class="status wait" id="statusText">Reading chain…
           <small id="statusSub">Fetching the latest attestation from Soroban RPC</small></div>
       </div>
       <div class="grid">
-        <div class="stat"><div class="k">Proven liabilities</div><div class="v" id="vTotal">—</div></div>
+        <div class="stat hl"><div class="k">Proven liabilities</div><div class="v" id="vTotal">—</div></div>
         <div class="stat"><div class="k">Attested reserve</div><div class="v" id="vReserve">—</div></div>
-        <div class="stat"><div class="k">Coverage</div><div class="v" id="vCov">—</div></div>
+        <div class="stat hl"><div class="k">Coverage</div><div class="v" id="vCov">—</div></div>
         <div class="stat"><div class="k">Attested at ledger</div><div class="v" id="vLedger">—</div></div>
       </div>
       <div class="links">
@@ -185,18 +298,17 @@
   </section>
 
   <!-- PROVER -->
-  <section id="prove">
+  <section id="prove" class="band">
     <div class="eyebrow">Interactive</div>
-    <h2>Generate a real proof — right here in your browser</h2>
-    <p class="lead">Enter eight customer balances. Your browser builds a Groth16 zero-knowledge proof
-      (BLS12-381) that they sum to a public total, with every balance range-checked so no negative
-      liability can be smuggled in. <b class="muted">The balances never leave this page</b> — only the
-      total and the proof would ever go on-chain.</p>
-    <div class="card">
-      <div class="bals" id="bals"></div>
+    <h2>Generate a real proof — in your browser</h2>
+    <p class="lead">Enter eight customer balances. Your browser builds a Groth16 proof (BLS12-381) that they
+      sum to a public total, with every balance range-checked so no negative liability can be smuggled in.
+      <b style="color:var(--mut)">The balances never leave this page.</b></p>
+    <div class="prover">
+      <div class="ledger" id="bals"></div>
       <div class="row">
         <button class="btn p" id="genBtn">Generate ZK proof</button>
-        <span class="muted mono" id="sumLbl">total: 0</span>
+        <span class="sumlbl" id="sumLbl">total: 0</span>
         <span class="pill">balances stay local</span>
       </div>
       <div class="priv" id="priv">
@@ -207,32 +319,46 @@
       <div class="log" id="log">Ready. Enter balances and generate a proof.</div>
     </div>
     <div class="note">Honesty note: on the live board the <b>reserve</b> figure is a signed issuer
-      attestation (a mock custodian value in this demo). The zero-knowledge part — that the published
-      total truly equals the sum of the hidden balances, with no negative-balance cheat — is real and
-      verified on-chain.</div>
+      attestation (a mock custodian value in this demo). The zero-knowledge part — that the published total
+      equals the sum of the hidden balances, with no negative-balance cheat — is real and verified on-chain.</div>
   </section>
 
   <!-- HOW -->
-  <section id="how">
+  <section id="how" class="band">
     <div class="eyebrow">Architecture</div>
     <h2>How it works</h2>
-    <div class="steps">
-      <div class="step"><div class="n">01</div><h3>Prove privately</h3>
-        <p>A Circom circuit takes the issuer's private customer balances and proves their sum equals a
-          public total, range-checking each one to block the Mt.&nbsp;Gox negative-liability trick.</p></div>
-      <div class="step"><div class="n">02</div><h3>Verify on Stellar</h3>
-        <p>A Soroban contract checks the Groth16 proof with Stellar's native BLS12-381 host functions
-          (Protocol 25/26), then confirms the attested reserve covers the proven liabilities.</p></div>
-      <div class="step"><div class="n">03</div><h3>Trust the badge</h3>
-        <p>Anyone reads SOLVENT / INSOLVENT from the chain. A tampered total makes the pairing check
-          fail, so a lie can never be recorded as a valid attestation.</p></div>
+    <p class="lead">Three steps. The middle one is the whole point — verification happens on Stellar, in a
+      contract, using native cryptography.</p>
+    <div class="flowsteps">
+      <div class="flowline"></div>
+      <div class="fstep">
+        <div class="fnode">01</div>
+        <div class="chip2">Off-chain · Circom</div>
+        <h3>Prove privately</h3>
+        <p>A circuit proves the issuer's private balances sum to a public total, range-checking each to
+          block the Mt. Gox negative-liability trick. Balances stay on the issuer's machine.</p>
+      </div>
+      <div class="fstep mid">
+        <div class="fnode">02</div>
+        <div class="chip2">On-chain · Soroban</div>
+        <h3>Verify on Stellar</h3>
+        <p>The contract checks the Groth16 proof with Stellar's native BLS12-381 host functions
+          (Protocol 25/26), then confirms the attested reserve covers the proven liabilities.</p>
+      </div>
+      <div class="fstep">
+        <div class="fnode">03</div>
+        <div class="chip2">Public · anyone</div>
+        <h3>Trust the verdict</h3>
+        <p>Anyone reads SOLVENT / INSOLVENT from the chain. A tampered total makes the pairing check fail,
+          so a lie can never be recorded as a valid attestation.</p>
+      </div>
     </div>
   </section>
 </div>
 
 <footer>
   <div class="wrap">
-    Solvent · ZK proof-of-reserves for Stellar issuers · built for Stellar Hacks: Real-World ZK.
+    Solvent · ZK proof-of-reserves for Stellar issuers · built for Stellar Hacks: Real-World ZK.<br>
     Circom + Groth16 (BLS12-381) verified in a Soroban smart contract. Testnet demo — not audited, not for real assets.
   </div>
 </footer>
@@ -248,17 +374,21 @@ document.getElementById("lkContract").href = `${EXP}/contract/${CID}`;
 document.getElementById("lkIssuer").href = `${EXP}/account/${ISSUER}`;
 
 const fmt = n => Number(n).toLocaleString("en-US");
+const RING_C = 339.29; // 2*pi*54
 
 /* ---------- interactive prover (snarkjs in-browser) ---------- */
 const seed = [1200,800,400,2500,100,900,1100,1000];
 const balsEl = document.getElementById("bals");
 const inputs = seed.map((v,i)=>{
+  const cell=document.createElement("div"); cell.className="cell";
+  const lab=document.createElement("label"); lab.textContent="Customer "+(i+1);
   const el=document.createElement("input");
-  el.type="number"; el.min="0"; el.value=v; el.setAttribute("aria-label",`balance ${i+1}`);
-  el.addEventListener("input",updateSum); balsEl.appendChild(el); return el;
+  el.type="number"; el.min="0"; el.value=v; el.setAttribute("aria-label",`customer ${i+1} balance`);
+  el.addEventListener("input",updateSum);
+  cell.appendChild(lab); cell.appendChild(el); balsEl.appendChild(cell); return el;
 });
 function readBals(){return inputs.map(i=>Math.max(0,Math.floor(Number(i.value)||0)));}
-function updateSum(){document.getElementById("sumLbl").textContent="total: "+fmt(readBals().reduce((a,b)=>a+b,0));}
+function updateSum(){document.getElementById("sumLbl").innerHTML="total: <b>"+fmt(readBals().reduce((a,b)=>a+b,0))+"</b>";}
 updateSum();
 
 const logEl=document.getElementById("log");
@@ -291,9 +421,8 @@ document.getElementById("genBtn").addEventListener("click",async()=>{
   btn.disabled=false;
 });
 
-/* ---------- live on-chain board ---------- */
+/* ---------- live on-chain board + hero ring ---------- */
 async function loadBoard(){
-  const setWait=(t,s)=>{document.getElementById("statusSub").textContent=s||"";};
   try{
     const sdk=window.StellarSdk;
     const rpc=new sdk.rpc.Server("https://soroban-testnet.stellar.org");
@@ -304,18 +433,22 @@ async function loadBoard(){
     const sim=await rpc.simulateTransaction(tx);
     if(sdk.rpc.Api.isSimulationError(sim)) throw new Error(sim.error);
     const val=sim.result?.retval ? sdk.scValToNative(sim.result.retval) : null;
-    render(val,sdk);
+    render(val);
   }catch(e){
     document.getElementById("statusSub").textContent="Live read unavailable — open the contract on Stellar.Expert ↗";
+    document.getElementById("heroCaption").textContent="Live read unavailable — see the contract on Stellar.Expert.";
+    document.getElementById("heroStatus").textContent="Unavailable";
     console.warn("board read failed",e);
   }
 }
-function render(a,sdk){
+function render(a){
   const dot=document.getElementById("dot"), st=document.getElementById("statusText");
+  const hb=document.getElementById("heroBadge");
   if(!a){dot.className="dot wait";dot.textContent="—";st.className="status wait";
     st.innerHTML='No attestation yet<small>Run the issuer tool to publish one</small>';return;}
   const total=BigInt(a.total), reserve=BigInt(a.reserve), solvent=a.solvent;
   const cov=total>0n?Number(reserve*10000n/total)/100:100;
+  // board
   document.getElementById("vTotal").textContent=fmt(total);
   document.getElementById("vReserve").textContent=fmt(reserve);
   document.getElementById("vCov").textContent=cov.toFixed(1)+"%";
@@ -324,6 +457,19 @@ function render(a,sdk){
     st.innerHTML='SOLVENT<small>Reserves cover proven liabilities · verified by ZK proof on-chain</small>';}
   else{dot.className="dot no";dot.textContent="!";st.className="status no";
     st.innerHTML='INSOLVENT<small>Proof valid, but attested reserve is below proven liabilities</small>';}
+  // hero ring
+  const arc=document.getElementById("heroArc"), ring=document.getElementById("heroRing");
+  const shown=Math.max(0,Math.min(cov,100));
+  arc.style.strokeDashoffset=RING_C*(1-shown/100);
+  ring.className="ring"+(solvent?"":" no");
+  document.getElementById("heroCov").textContent=cov.toFixed(1)+"%";
+  document.getElementById("heroTotal").textContent=fmt(total);
+  document.getElementById("heroReserve").textContent=fmt(reserve);
+  hb.className="badge2 "+(solvent?"ok":"no");
+  document.getElementById("heroStatus").textContent=solvent?"SOLVENT":"INSOLVENT";
+  document.getElementById("heroCaption").textContent=solvent
+    ?"Reserves cover the proven liabilities — verified on-chain."
+    :"Attested reserve is below the proven liabilities.";
 }
 loadBoard();
 if(location.search.includes("autoprove")){window.addEventListener("load",()=>setTimeout(()=>document.getElementById("genBtn").click(),400));}
