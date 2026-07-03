@@ -295,7 +295,7 @@
         <a id="lkIssuer" target="_blank" rel="noopener">Issuer account ↗</a>
         <span class="pill" id="cid"></span>
       </div>
-      <div class="tanchor"><b>Verified by a BLS12-381 pairing check inside the contract</b> — cryptography, not a custodian's word.</div>
+      <div class="tanchor"><b>Verified on-chain by native pairing checks over BLS12-381 (Protocol 25) and BN254 (Protocol 26).</b> <span id="curveNote"></span> Cryptography, not a custodian's word.</div>
     </div>
   </section>
 
@@ -368,7 +368,7 @@
 <script src="vendor-snarkjs.min.js"></script>
 <script src="vendor-stellar-sdk.min.js"></script>
 <script>
-const CID = "CC33DWJZK2XQ7KWKBDJK2KBJSQNWUPG3DSGCHNMMOAIGC3VTAXZQLHDJ";
+const CID = "CCRAJEUHMJUUVJX3SJZWUPGJKRF43ZXDETWFNCSAKND3FPAI33QXJZBE";
 const ISSUER = "GDFXZME4BSOZNOWNJF5WCM6OG2IPLFIGFJZJ5PX7HYRLY2JWQWW6ZAZS";
 const EXP = "https://stellar.expert/explorer/testnet";
 document.getElementById("cid").textContent = CID.slice(0,6)+"…"+CID.slice(-6);
@@ -430,8 +430,9 @@ async function loadBoard(){
     const rpc=new sdk.rpc.Server("https://soroban-testnet.stellar.org");
     const acct=await rpc.getAccount(ISSUER);
     const c=new sdk.Contract(CID);
+    const issuerArg=sdk.Address.fromString(ISSUER).toScVal();
     const tx=new sdk.TransactionBuilder(acct,{fee:"100",networkPassphrase:sdk.Networks.TESTNET})
-      .addOperation(c.call("latest")).setTimeout(30).build();
+      .addOperation(c.call("latest",issuerArg)).setTimeout(30).build();
     const sim=await rpc.simulateTransaction(tx);
     if(sdk.rpc.Api.isSimulationError(sim)) throw new Error(sim.error);
     const val=sim.result?.retval ? sdk.scValToNative(sim.result.retval) : null;
@@ -455,6 +456,7 @@ function render(a){
   document.getElementById("vReserve").textContent=fmt(reserve);
   document.getElementById("vCov").textContent=cov.toFixed(1)+"%";
   document.getElementById("vLedger").textContent="#"+fmt(a.ledger);
+  const cn=document.getElementById("curveNote"); if(cn&&a.curve) cn.textContent="This attestation was verified with "+a.curve+".";
   if(solvent){dot.className="dot ok";dot.textContent="✓";st.className="status ok";
     st.innerHTML='SOLVENT<small>Reserves cover proven liabilities · verified by ZK proof on-chain</small>';}
   else{dot.className="dot no";dot.textContent="!";st.className="status no";

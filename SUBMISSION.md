@@ -28,7 +28,9 @@ https://github.com/Yonkoo11/solvent
 ### Full description
 Solvent lets a stablecoin or real-world-asset issuer prove on-chain that its reserves cover every customer liability, without revealing a single account balance. A Soroban smart contract verifies a zero-knowledge proof and records the verdict: SOLVENT or INSOLVENT.
 
-The zero-knowledge is load-bearing, not decoration. A Circom circuit proves the private customer balances sum to a public total, and that none of them is a negative liability sneaked in to shrink the number (the Mt. Gox trick). The proof is Groth16 over BLS12-381, verified inside the contract using Stellar's native host functions. Because the total is baked into the proof, lying about it makes the check fail, so the contract can never record a lie.
+The zero-knowledge is load-bearing, not decoration. A Circom circuit proves the private customer balances sum to a public total, and that none of them is a negative liability sneaked in to shrink the number (the Mt. Gox trick). Because the total is baked into the proof, lying about it makes the check fail, so the contract can never record a lie.
+
+Two of Stellar's native ZK primitives are load-bearing. The contract can verify the same solvency proof over BLS12-381 (Protocol 25 host functions) and over BN254 (the Protocol 26 host functions), both proven live on testnet. Attestations are stored per issuer, so one issuer can never overwrite or grief another's published verdict.
 
 It runs live on Stellar testnet. In the browser you enter balances, a real proof is built locally (your balances never leave the page), and the live board reads the on-chain verdict.
 
@@ -51,10 +53,10 @@ https://yonkoo11.github.io/solvent/
 Upload the file: ~/Projects/solvent/video/solvent-demo.mp4
 
 ### Stellar contract (testnet)
-CC33DWJZK2XQ7KWKBDJK2KBJSQNWUPG3DSGCHNMMOAIGC3VTAXZQLHDJ
+CCRAJEUHMJUUVJX3SJZWUPGJKRF43ZXDETWFNCSAKND3FPAI33QXJZBE
 
 ### Tech stack / tags
-Zero Knowledge, ZK, Circom, snarkjs, Groth16, BLS12-381, Soroban, Stellar, Proof of Reserves, Stablecoins, RWA
+Zero Knowledge, ZK, Circom, snarkjs, Groth16, BLS12-381, BN254, Soroban, Stellar, Proof of Reserves, Stablecoins, RWA
 
 ================================================================
 ## TAB 3 — TEAM

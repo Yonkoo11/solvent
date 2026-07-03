@@ -9,7 +9,7 @@ pairing check fail, so it can never be recorded as a valid attestation.
 Built for **Stellar Hacks: Real-World ZK**.
 
 - **Live demo:** https://yonkoo11.github.io/solvent/
-- **Contract (testnet):** [`CC33DWJZK2XQ7KWKBDJK2KBJSQNWUPG3DSGCHNMMOAIGC3VTAXZQLHDJ`](https://stellar.expert/explorer/testnet/contract/CC33DWJZK2XQ7KWKBDJK2KBJSQNWUPG3DSGCHNMMOAIGC3VTAXZQLHDJ)
+- **Contract (testnet):** [`CCRAJEUHMJUUVJX3SJZWUPGJKRF43ZXDETWFNCSAKND3FPAI33QXJZBE`](https://stellar.expert/explorer/testnet/contract/CCRAJEUHMJUUVJX3SJZWUPGJKRF43ZXDETWFNCSAKND3FPAI33QXJZBE)
 
 ---
 
@@ -26,9 +26,15 @@ balances. A [Circom circuit](circuits/solvency.circom) proves two things at once
    Mt. Gox trick of inserting a "negative" liability (a field element near the curve order) to
    shrink the reported total.
 
-The proof (Groth16 over **BLS12-381**) is verified inside the [Soroban contract](contracts/solvency/src/lib.rs)
-with `env.crypto().bls12_381().pairing_check(...)`. The contract then checks the issuer's attested
-reserve against the *proven* total and records **SOLVENT** or **INSOLVENT**.
+The proof (Groth16) is verified inside the [Soroban contract](contracts/solvency/src/lib.rs) using
+**two** of Stellar's native ZK primitives, both proven live on testnet:
+
+- `attest` verifies over **BLS12-381** — `env.crypto().bls12_381().pairing_check(...)` (Protocol 25 / CAP-0059)
+- `attest_bn254` verifies over **BN254** — `env.crypto().bn254().pairing_check(...)` (Protocol 26 / CAP-0074)
+
+The contract then checks the issuer's attested reserve against the *proven* total and records
+**SOLVENT** or **INSOLVENT**. Attestations are stored **per issuer**, so one issuer can never
+overwrite or grief another's published verdict.
 
 Because the total `T` is a public input to the proof, changing it on the contract call changes the
 field element the pairing is computed against — so a tampered total is rejected by the cryptography,
