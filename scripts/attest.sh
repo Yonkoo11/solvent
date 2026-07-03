@@ -30,7 +30,7 @@ npx snarkjs groth16 verify build/verification_key.json build/public.json build/p
 echo "    proof verifies off-chain for total=$TOTAL"
 
 echo "==> converting proof to on-chain byte format"
-( cd scripts/converter && cargo run --quiet >/dev/null )
+( cd scripts/converter && cargo run --quiet --bin convert >/dev/null )
 
 PA=$(node -e "console.log(require('./build/invoke_args.json').proof_a)")
 PB=$(node -e "console.log(require('./build/invoke_args.json').proof_b)")
