@@ -30,7 +30,7 @@ Solvent lets a stablecoin or real-world-asset issuer prove on-chain that its res
 
 The zero-knowledge is load-bearing, not decoration. A Circom circuit proves the private customer balances sum to a public total, and that none of them is a negative liability sneaked in to shrink the number (the Mt. Gox trick). Because the total is baked into the proof, lying about it makes the check fail, so the contract can never record a lie.
 
-Three of Stellar's native ZK primitives are load-bearing, all proven live on testnet. The contract verifies the same solvency proof over BLS12-381 (Protocol 25) and over BN254 (Protocol 26), and it uses the native Poseidon host function (Protocol 25, CAP-0075) for a customer Merkle inclusion proof. The Poseidon wiring is validated on-chain against the canonical poseidon([1,2]) test vector, not trusted blind. Attestations are stored per issuer, so one issuer can never overwrite or grief another's published verdict.
+Three of Stellar's native ZK primitives are load-bearing, all proven live on testnet. The contract verifies the same solvency proof over BLS12-381 (Protocol 25) and over BN254 (Protocol 26), and it uses the native Poseidon host function (Protocol 25, CAP-0075) for customer Merkle inclusion. The BN254 circuit also computes the Poseidon Merkle root of the same balances in-circuit and publishes it, so a customer's inclusion proof is checked against the exact set of balances the total was proven from (trustless inclusion). The Poseidon wiring is validated on-chain against the canonical poseidon([1,2]) test vector, not trusted blind. Attestations are stored per issuer, so one issuer can never overwrite or grief another's published verdict.
 
 It runs live on Stellar testnet. In the browser you enter balances, a real proof is built locally (your balances never leave the page), and the live board reads the on-chain verdict.
 
@@ -53,7 +53,7 @@ https://yonkoo11.github.io/solvent/
 Upload the file: ~/Projects/solvent/video/solvent-demo.mp4
 
 ### Stellar contract (testnet)
-CAR32L3OU3W3CHQBWCN5IDTJZ5D4HL5EDIQEBLHTWOJE6OYVEBSALHBK
+CCVRCYVNKJ2OZPWJC7PDETHBTE5R5EJPCX5DFZS5PRKX7FHPLLQK2HNV
 
 ### Tech stack / tags
 Zero Knowledge, ZK, Circom, snarkjs, Groth16, BLS12-381, BN254, Soroban, Stellar, Proof of Reserves, Stablecoins, RWA

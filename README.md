@@ -9,7 +9,7 @@ pairing check fail, so it can never be recorded as a valid attestation.
 Built for **Stellar Hacks: Real-World ZK**.
 
 - **Live demo:** https://yonkoo11.github.io/solvent/
-- **Contract (testnet):** [`CAR32L3OU3W3CHQBWCN5IDTJZ5D4HL5EDIQEBLHTWOJE6OYVEBSALHBK`](https://stellar.expert/explorer/testnet/contract/CAR32L3OU3W3CHQBWCN5IDTJZ5D4HL5EDIQEBLHTWOJE6OYVEBSALHBK)
+- **Contract (testnet):** [`CCVRCYVNKJ2OZPWJC7PDETHBTE5R5EJPCX5DFZS5PRKX7FHPLLQK2HNV`](https://stellar.expert/explorer/testnet/contract/CCVRCYVNKJ2OZPWJC7PDETHBTE5R5EJPCX5DFZS5PRKX7FHPLLQK2HNV)
 
 ---
 
@@ -31,7 +31,13 @@ The proof (Groth16) is verified inside the [Soroban contract](contracts/solvency
 
 - `attest` verifies over **BLS12-381** — `env.crypto().bls12_381().pairing_check(...)` (Protocol 25 / CAP-0059)
 - `attest_bn254` verifies over **BN254** — `env.crypto().bn254().pairing_check(...)` (Protocol 26 / CAP-0074)
-- `hash2` / `verify_inclusion` use the native **Poseidon** host function — `env.crypto_hazmat().poseidon_permutation(...)` (Protocol 25 / CAP-0075) — for a customer Merkle inclusion proof
+- `verify_inclusion` uses the native **Poseidon** host function — `env.crypto_hazmat().poseidon_permutation(...)` (Protocol 25 / CAP-0075) — to check a customer's Merkle inclusion against the **proof-bound** root
+
+The BN254 path uses a second circuit ([`solvency_bound.circom`](circuits/solvency_bound.circom)) that
+also computes the **Poseidon Merkle root of the same balances in-circuit** and publishes it. So the
+root a customer checks their inclusion against is the *same* set of balances the total was proven
+from. Tampering the root fails the proof; a fake customer leaf fails `verify_inclusion`. Both checked
+live on-chain.
 
 The contract then checks the issuer's attested reserve against the *proven* total and records
 **SOLVENT** or **INSOLVENT**. Attestations are stored **per issuer**, so one issuer can never
@@ -56,8 +62,10 @@ All exercised live against the deployed contract:
 | Valid proof (BLS12-381), reserve ≥ liabilities | `true` → **SOLVENT** (recorded) |
 | Valid proof (BN254), reserve ≥ liabilities | `true` → **SOLVENT** (recorded) |
 | Valid proof, reserve < liabilities | `false` → **INSOLVENT** (recorded) |
-| **Tampered** total (either curve) | `Error(Contract, #2)` **ProofRejected** (nothing recorded) |
+| **Tampered** total or root (BN254) | `Error(Contract, #2)` **ProofRejected** (nothing recorded) |
 | Poseidon `hash2(1,2)` on-chain | `0x115cc0f5…` — the canonical `poseidon([1,2])` vector |
+| `verify_inclusion` real customer leaf | `true` (verified against the proof-bound root) |
+| `verify_inclusion` fake leaf | `false` |
 
 ## Repo layout
 
@@ -94,12 +102,10 @@ Poseidon) — genuine cryptographic verification, not a mock. To deploy + attest
   passes in (a stand-in for a real custodian feed). The zero-knowledge part (that the published
   total equals the sum of the hidden balances, with no negative-balance cheat) is real and verified
   on-chain. Wiring a real custodian attestation is the obvious next step.
-- **Poseidon Merkle inclusion is wired and validated on-chain** (`verify_inclusion` folds a path with
-  the native Poseidon host function), but the Merkle root is **not yet bound to the ZK sum-proof**.
-  Binding them requires computing the Poseidon root inside the Circom circuit so the proven balances
-  and the inclusion tree are provably the same set. That is the next step; until then, inclusion
-  proves membership in the issuer's published tree, and the ZK proof separately proves the total is
-  honest.
+- **Poseidon Merkle inclusion is bound to the ZK proof** (BN254 path): the bound circuit computes the
+  Poseidon root of the same balances in-circuit and publishes it, so `verify_inclusion` checks a
+  customer against the exact set the total was proven from. A real leaf verifies and a fake leaf fails,
+  live on-chain. (The BLS12-381 `attest` path proves the sum only and stores `root = 0`.)
 - The circuit is fixed at **N = 8** balances for the demo; it is parameterizable.
 - Testnet only. The contract has **not** been audited. Do not use with real assets.
 - The trusted setup here is a single-contributor toy ceremony. Production needs a real MPC ceremony.

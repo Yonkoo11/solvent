@@ -50,6 +50,15 @@ fn bn_g2(env: &Env, c: &serde_json::Value) -> BytesN<128> {
     b[96..128].copy_from_slice(&bn_fq_be(c[1][0].as_str().unwrap()));
     BytesN::from_array(env, &b)
 }
+// BN254 scalar-field decimal string -> U256 (for the Merkle root public signal)
+fn bn_fr_u256(env: &Env, s: &str) -> U256 {
+    use ark_bn254::Fr;
+    use ark_ff::{BigInteger, PrimeField};
+    let be = Fr::from_str(s).unwrap().into_bigint().to_bytes_be();
+    let mut out = [0u8; 32];
+    out[32 - be.len()..].copy_from_slice(&be);
+    U256::from_be_bytes(env, &Bytes::from_array(env, &out))
+}
 
 fn read(path: &str) -> serde_json::Value {
     let base = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../build");
@@ -82,20 +91,27 @@ fn bls_solvent_and_insolvent_and_tampered() {
     assert!(c.try_attest(&issuer, &bogus, &(bogus + 1000), &a, &b, &cc).is_err());
 }
 
-// ================= BN254 =================
+// ================= BN254 (bound circuit: proves sum AND Merkle root) =================
 #[test]
-fn bn254_verifies_and_marks_solvent() {
+fn bn254_bound_verifies_and_marks_solvent() {
     let env = Env::default();
     let c = client(&env);
-    let proof = read("bn254/proof.json");
-    let total: u128 = read("bn254/public.json")[0].as_str().unwrap().parse().unwrap();
+    let proof = read("bound/proof.json");
+    let public = read("bound/public.json"); // [root, total]
+    let root = bn_fr_u256(&env, public[0].as_str().unwrap());
+    let total: u128 = public[1].as_str().unwrap().parse().unwrap();
     let (a, b, cc) = (bn_g1(&env, &proof["pi_a"]), bn_g2(&env, &proof["pi_b"]), bn_g1(&env, &proof["pi_c"]));
     let issuer = Address::generate(&env);
 
-    assert_eq!(c.attest_bn254(&issuer, &total, &(total + 500), &a, &b, &cc), true);
-    assert_eq!(c.latest(&issuer).unwrap().curve, soroban_sdk::symbol_short!("BN254"));
-    // tampered total on BN254 path is rejected too
-    assert!(c.try_attest_bn254(&issuer, &(total - 1), &(total + 500), &a, &b, &cc).is_err());
+    assert_eq!(c.attest_bn254(&issuer, &total, &(total + 500), &root, &a, &b, &cc), true);
+    let att = c.latest(&issuer).unwrap();
+    assert_eq!(att.curve, soroban_sdk::symbol_short!("BN254"));
+    assert_eq!(att.root, root, "the proof-bound Merkle root must be stored");
+    // tampered total is rejected
+    assert!(c.try_attest_bn254(&issuer, &(total - 1), &(total + 500), &root, &a, &b, &cc).is_err());
+    // tampered root is rejected (proof binds root to the balances)
+    let bad_root = bn_fr_u256(&env, "12345");
+    assert!(c.try_attest_bn254(&issuer, &total, &(total + 500), &bad_root, &a, &b, &cc).is_err());
 }
 
 // ============ Poseidon host-function gate (must pass before use) ============
@@ -108,24 +124,37 @@ fn poseidon_matches_reference() {
     assert_eq!(got, expected, "on-chain Poseidon must match circomlib poseidon([1,2])");
 }
 
-// ============ Poseidon Merkle inclusion (uses the native host function) ============
+// ==== Bound Merkle inclusion: customer verifies against the PROOF-BOUND root ====
+// Uses the same balances the bound circuit proved: [1200,800,400,2500,100,900,1100,1000].
 #[test]
-fn poseidon_merkle_inclusion() {
+fn inclusion_against_bound_root() {
     let env = Env::default();
     let c = client(&env);
+    // First, land a real bound attestation so the issuer's stored root is the
+    // one the circuit proved.
+    let proof = read("bound/proof.json");
+    let public = read("bound/public.json");
+    let root = bn_fr_u256(&env, public[0].as_str().unwrap());
+    let total: u128 = public[1].as_str().unwrap().parse().unwrap();
+    let (a, b, cc) = (bn_g1(&env, &proof["pi_a"]), bn_g2(&env, &proof["pi_b"]), bn_g1(&env, &proof["pi_c"]));
+    let issuer = Address::generate(&env);
+    assert_eq!(c.attest_bn254(&issuer, &total, &(total + 500), &root, &a, &b, &cc), true);
+
+    // Build customer 0's inclusion path (leaf = balance 1200) using the same
+    // Poseidon the contract uses.
     let u = |n: u32| U256::from_u32(&env, n);
-    // 4-leaf tree: leaves 10,20,30,40
-    let (l0, l1, l2, l3) = (u(10), u(20), u(30), u(40));
-    let h01 = c.hash2(&l0, &l1);
-    let h23 = c.hash2(&l2, &l3);
-    let root = c.hash2(&h01, &h23);
-    // inclusion path for l0: sibling l1 (right), then sibling h23 (right)
+    let l1_1 = c.hash2(&u(400), &u(2500));
+    let l2_1 = c.hash2(&c.hash2(&u(100), &u(900)), &c.hash2(&u(1100), &u(1000)));
     let mut path = soroban_sdk::Vec::new(&env);
-    path.push_back((l1.clone(), false));
-    path.push_back((h23.clone(), false));
-    assert_eq!(c.verify_inclusion(&l0, &path, &root), true, "valid path must verify");
-    // wrong leaf must fail
-    assert_eq!(c.verify_inclusion(&u(99), &path, &root), false, "bad leaf must not verify");
+    path.push_back((u(800), false)); // sibling 800 on the right
+    path.push_back((l1_1, false));
+    path.push_back((l2_1, false));
+
+    assert_eq!(c.verify_inclusion(&issuer, &u(1200), &path), true, "real leaf must verify against bound root");
+    assert_eq!(c.verify_inclusion(&issuer, &u(9999), &path), false, "fake leaf must not verify");
+    // an issuer with no attestation verifies nothing
+    let stranger = Address::generate(&env);
+    assert_eq!(c.verify_inclusion(&stranger, &u(1200), &path), false);
 }
 
 // ================= per-issuer isolation =================

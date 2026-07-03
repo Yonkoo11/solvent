@@ -85,6 +85,7 @@ pub struct Attestation {
     pub reserve: u128, // issuer's attested reserves
     pub solvent: bool, // proof valid AND reserve >= total
     pub curve: Symbol, // which primitive verified it: BLS12_381 or BN254
+    pub root: U256,    // Poseidon Merkle root of the balances, bound by the proof (BN254 path); 0 for BLS
     pub ledger: u32,
 }
 
@@ -115,7 +116,7 @@ fn load_vk_bls(env: &Env) -> (G1Affine, G2Affine, G2Affine, G2Affine, Vec<G1Affi
     )
 }
 
-fn record(env: &Env, issuer: Address, total: u128, reserve: u128, curve: Symbol) -> bool {
+fn record(env: &Env, issuer: Address, total: u128, reserve: u128, curve: Symbol, root: U256) -> bool {
     let solvent = reserve >= total;
     let att = Attestation {
         issuer: issuer.clone(),
@@ -123,6 +124,7 @@ fn record(env: &Env, issuer: Address, total: u128, reserve: u128, curve: Symbol)
         reserve,
         solvent,
         curve: curve.clone(),
+        root,
         ledger: env.ledger().sequence(),
     };
     env.storage().persistent().set(&DataKey::Attest(issuer.clone()), &att);
@@ -167,7 +169,8 @@ impl SolvencyContract {
         if !bls.pairing_check(vp1, vp2) {
             return Err(Error::ProofRejected);
         }
-        Ok(record(&env, issuer, total, reserve, symbol_short!("BLS12_381")))
+        // BLS path proves the sum only (no in-circuit Merkle root): root = 0.
+        Ok(record(&env, issuer, total, reserve, symbol_short!("BLS12_381"), U256::from_u32(&env, 0)))
     }
 
     /// Verify a solvency proof with **BN254** (Protocol 26 host functions) and
@@ -177,6 +180,7 @@ impl SolvencyContract {
         issuer: Address,
         total: u128,
         reserve: u128,
+        root: U256,
         proof_a: BytesN<64>,
         proof_b: BytesN<128>,
         proof_c: BytesN<64>,
@@ -186,13 +190,19 @@ impl SolvencyContract {
             &env,
             Bn254G1Affine::from_bytes(BytesN::from_array(&env, &vk_data_bn254::VK_IC0)),
             Bn254G1Affine::from_bytes(BytesN::from_array(&env, &vk_data_bn254::VK_IC1)),
+            Bn254G1Affine::from_bytes(BytesN::from_array(&env, &vk_data_bn254::VK_IC2)),
         ];
         let alpha = Bn254G1Affine::from_bytes(BytesN::from_array(&env, &vk_data_bn254::VK_ALPHA));
         let beta = Bn254G2Affine::from_bytes(BytesN::from_array(&env, &vk_data_bn254::VK_BETA));
         let gamma = Bn254G2Affine::from_bytes(BytesN::from_array(&env, &vk_data_bn254::VK_GAMMA));
         let delta = Bn254G2Affine::from_bytes(BytesN::from_array(&env, &vk_data_bn254::VK_DELTA));
 
-        let pub_signals = vec![&env, BnFr::from_u256(u256_from_u128(&env, total))];
+        // Public signals in circuit order: [root, total].
+        let pub_signals = vec![
+            &env,
+            BnFr::from_u256(root.clone()),
+            BnFr::from_u256(u256_from_u128(&env, total)),
+        ];
         if pub_signals.len() + 1 != ic.len() {
             return Err(Error::MalformedVerifyingKey);
         }
@@ -209,7 +219,8 @@ impl SolvencyContract {
         if !bn.pairing_check(vp1, vp2) {
             return Err(Error::ProofRejected);
         }
-        Ok(record(&env, issuer, total, reserve, symbol_short!("BN254")))
+        // The proof binds `root` to the same balances that sum to `total`.
+        Ok(record(&env, issuer, total, reserve, symbol_short!("BN254"), root))
     }
 
     /// Latest recorded attestation for a specific issuer.
@@ -235,12 +246,20 @@ impl SolvencyContract {
         poseidon2(&env, &a, &b)
     }
 
-    /// Verify a Poseidon Merkle inclusion path on-chain: fold `leaf` up through
-    /// `path` (each step is a sibling and whether it sits on the left) using the
-    /// native Poseidon host function, and check the computed root equals `root`.
-    /// Lets a customer prove their balance leaf is inside an issuer's published
-    /// tree without revealing the other leaves.
-    pub fn verify_inclusion(env: Env, leaf: U256, path: Vec<(U256, bool)>, root: U256) -> bool {
+    /// Verify a customer's Poseidon Merkle inclusion against the issuer's
+    /// proof-bound root. Folds `leaf` up through `path` (each step: a sibling and
+    /// whether it sits on the left) with the native Poseidon host function and
+    /// checks the computed root equals the root recorded in the issuer's latest
+    /// BN254 attestation. Because that root is a public output of the same proof
+    /// that fixed the total, this proves the leaf belongs to the exact set of
+    /// balances the solvency total was computed from. Returns false if the issuer
+    /// has no attestation or used the BLS path (root = 0).
+    pub fn verify_inclusion(env: Env, issuer: Address, leaf: U256, path: Vec<(U256, bool)>) -> bool {
+        let att: Option<Attestation> = env.storage().persistent().get(&DataKey::Attest(issuer));
+        let root = match att {
+            Some(a) => a.root,
+            None => return false,
+        };
         let mut node = leaf;
         for (sib, sib_left) in path.iter() {
             node = if sib_left {

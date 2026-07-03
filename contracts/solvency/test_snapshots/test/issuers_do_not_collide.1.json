@@ -25,13 +25,13 @@
                   "u128": "8001"
                 },
                 {
-                  "bytes": "0502c6ec40a0d23020a96d16712931b10c83f9b0800eb3847adc4de7fbba77808f769667d5fd892a2db86ffd112fe6b2084d478603bc34c343567aba18faa554481a739ecc6220c1a96c1e2f9aa321da7e4dc99c6461c93f2be129cf472b56fc"
+                  "bytes": "02414e3dc63a8a03931cf94f661eba0ef362460852c83ec73f7b27dd3288e8ad72dabcfec097639c495ca3d81ba7679e187092fbe3a3eac8e8f59469656d6a7ac19b0b3f71532e49b7f2c2abbd878f8d8257c7a1a9cbb918d31e5e29c7a322cc"
                 },
                 {
-                  "bytes": "1681852d24a38d0fe562e676cf3f6b46e2816143196df98b57c685253306795dd469996fb891468beb6754fc9284b93f0c57a184f1c3d40143d4853d8fe8e70085d0afb0519c89a82b293d7a719abae49e2510a1656cce11300b49138914671911a6c3abdb0dd2edd7b5a94d96acc77c6a8162128019f1c4cbd109309f018e7aada3aad029e762499d7f299d7fc1e71e0b093e28812de592a9b8a4349ad062ffc919861ed5ca6c6ef353c756ada8b62e7503924dc7b1907f1d7623f957a49920"
+                  "bytes": "01fdd86bca43de7067c3b05fdaf06783b02730f01b84568d92e7c66e401e2311c95d9b0650fd597d812731821779c4e603fed3f0cc8de922d3da6b7473dcec7192db2a37a4ec9119940ecbb1ebca16f6580879459184b1884f9cff043b7af47815e2a093cf667531692bfb5050b03f7512071fbaf1bf911cd137169da7907c9fd11e7ea98d29cf1c3184df3e74df0e8c04c6ca29c5246f27c2a50fe7cd7586830abe475fa7d522d22248254ae4f7d00b729d0dc8131286ab631db7e4bd5a1a92"
                 },
                 {
-                  "bytes": "16fb8f5fb536592743c994a46c1a67a4c410a7be2adb1d6a20f0bb0d7ce15d77d7d0de291a7bf87df1d4089fd5dd60af03c61716279d5fa19a771f9196341e6d6f42287b638416e569cda6cbf68e01e092e1a6937c5bf10a122ff8af10c58941"
+                  "bytes": "07b04a92b4fc24777cf59b6e2251b3f1a103396a432c0ffaa7b99edb66584e3b3d8d9ccfe310af2c891ed29949bf7a9200c008ed4745373e5ef744df71d21b829f4a7603198f36e99e47155cfd24eb29c7b191ced78a75cadd8a933e7f7ce855"
                 }
               ]
             }
@@ -59,13 +59,13 @@
                   "u128": "7999"
                 },
                 {
-                  "bytes": "0502c6ec40a0d23020a96d16712931b10c83f9b0800eb3847adc4de7fbba77808f769667d5fd892a2db86ffd112fe6b2084d478603bc34c343567aba18faa554481a739ecc6220c1a96c1e2f9aa321da7e4dc99c6461c93f2be129cf472b56fc"
+                  "bytes": "02414e3dc63a8a03931cf94f661eba0ef362460852c83ec73f7b27dd3288e8ad72dabcfec097639c495ca3d81ba7679e187092fbe3a3eac8e8f59469656d6a7ac19b0b3f71532e49b7f2c2abbd878f8d8257c7a1a9cbb918d31e5e29c7a322cc"
                 },
                 {
-                  "bytes": "1681852d24a38d0fe562e676cf3f6b46e2816143196df98b57c685253306795dd469996fb891468beb6754fc9284b93f0c57a184f1c3d40143d4853d8fe8e70085d0afb0519c89a82b293d7a719abae49e2510a1656cce11300b49138914671911a6c3abdb0dd2edd7b5a94d96acc77c6a8162128019f1c4cbd109309f018e7aada3aad029e762499d7f299d7fc1e71e0b093e28812de592a9b8a4349ad062ffc919861ed5ca6c6ef353c756ada8b62e7503924dc7b1907f1d7623f957a49920"
+                  "bytes": "01fdd86bca43de7067c3b05fdaf06783b02730f01b84568d92e7c66e401e2311c95d9b0650fd597d812731821779c4e603fed3f0cc8de922d3da6b7473dcec7192db2a37a4ec9119940ecbb1ebca16f6580879459184b1884f9cff043b7af47815e2a093cf667531692bfb5050b03f7512071fbaf1bf911cd137169da7907c9fd11e7ea98d29cf1c3184df3e74df0e8c04c6ca29c5246f27c2a50fe7cd7586830abe475fa7d522d22248254ae4f7d00b729d0dc8131286ab631db7e4bd5a1a92"
                 },
                 {
-                  "bytes": "16fb8f5fb536592743c994a46c1a67a4c410a7be2adb1d6a20f0bb0d7ce15d77d7d0de291a7bf87df1d4089fd5dd60af03c61716279d5fa19a771f9196341e6d6f42287b638416e569cda6cbf68e01e092e1a6937c5bf10a122ff8af10c58941"
+                  "bytes": "07b04a92b4fc24777cf59b6e2251b3f1a103396a432c0ffaa7b99edb66584e3b3d8d9ccfe310af2c891ed29949bf7a9200c008ed4745373e5ef744df71d21b829f4a7603198f36e99e47155cfd24eb29c7b191ced78a75cadd8a933e7f7ce855"
                 }
               ]
             }
@@ -142,6 +142,14 @@
                   },
                   {
                     "key": {
+                      "symbol": "root"
+                    },
+                    "val": {
+                      "u256": "0"
+                    }
+                  },
+                  {
+                    "key": {
                       "symbol": "solvent"
                     },
                     "val": {
@@ -214,6 +222,14 @@
                     },
                     "val": {
                       "u128": "7999"
+                    }
+                  },
+                  {
+                    "key": {
+                      "symbol": "root"
+                    },
+                    "val": {
+                      "u256": "0"
                     }
                   },
                   {

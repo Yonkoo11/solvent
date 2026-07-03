@@ -39,7 +39,8 @@ fn rust_arr(name: &str, b: &[u8]) -> String {
 }
 
 fn main() {
-    let base = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../build/bn254");
+    // Bound circuit: public signals are [root, total]; VK has 3 IC entries.
+    let base = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../build/bound");
     let read = |f: &str| -> serde_json::Value {
         serde_json::from_str(&std::fs::read_to_string(base.join(f)).unwrap()).unwrap()
     };
@@ -63,11 +64,14 @@ fn main() {
     std::fs::write(&vk_path, out).unwrap();
     eprintln!("wrote {}", vk_path.display());
 
-    let total = public[0].as_str().unwrap();
+    // public.json order = [root, total]
+    let root = public[0].as_str().unwrap();
+    let total = public[1].as_str().unwrap();
     let args = serde_json::json!({
         "proof_a": hex(&g1_bytes(&proof["pi_a"])),
         "proof_b": hex(&g2_bytes(&proof["pi_b"])),
         "proof_c": hex(&g1_bytes(&proof["pi_c"])),
+        "root": root,
         "total": total,
     });
     std::fs::write(base.join("invoke_args.json"), serde_json::to_string_pretty(&args).unwrap()).unwrap();
