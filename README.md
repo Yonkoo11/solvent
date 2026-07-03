@@ -52,7 +52,7 @@ scripts/build-circuit.sh     compile + trusted setup + prove + off-chain verify 
 scripts/converter/           arkworks tool: snarkjs JSON -> uncompressed on-chain bytes
 scripts/attest.sh            issuer tool: prove any balances -> submit attestation to testnet
 contracts/solvency/          Soroban verifier + solvency logic (soroban-sdk 25.1.0)
-web/                         static dashboard: live on-chain board + in-browser prover
+docs/                         static dashboard: live on-chain board + in-browser prover
 ```
 
 ## Reproduce it
