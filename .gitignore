@@ -56,3 +56,9 @@ scripts/converter/target/
 *.zkey
 *.ptau
 *.wtns
+video/frames/
+video/seg/
+video/captions/
+video/clips/
+video/_joined.mp4
+video/concat.txt

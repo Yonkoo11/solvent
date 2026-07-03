@@ -1,0 +1,6 @@
+{
+  "01-hero": "This issuer just proved it can cover every customer. On chain. Without revealing a single balance.",
+  "02-prove": "Type in the private customer balances. The browser builds a zero knowledge proof that they sum to a public total. The balances stay hidden. Only the total is proven.",
+  "03-board": "A Stellar contract verifies that proof with native cryptography. Then it confirms reserves cover the proven total. The result reads solvent, live on chain.",
+  "04-how": "The whole point is that you cannot lie. Change the total, and the cryptographic check fails. This is proof of reserves you can actually verify."
+}
